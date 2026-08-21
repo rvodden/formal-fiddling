@@ -1,0 +1,10 @@
+# SymbiYosys working directories. Each task gets one, named for the .sby
+# file and the task: prove_good/, prove_bad1/, and so on.
+prove_*/
+probe_*/
+
+# The scratch copy `make solution' builds, with the reference property
+# file swapped in.
+.ref/
+
+*.vcd

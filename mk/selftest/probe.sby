@@ -1,0 +1,31 @@
+# Four tasks, one for each verdict mk/run.sh has to be able to tell apart.
+
+[tasks]
+verdict_pass
+verdict_fail
+verdict_unknown
+verdict_error
+
+[options]
+verdict_pass:     mode bmc
+verdict_fail:     mode bmc
+verdict_unknown:  mode prove
+verdict_error:    mode bmc
+depth 12
+
+[engines]
+smtbmc z3
+
+[script]
+verdict_pass:     read -formal -DWANT_PASS tiny.v
+verdict_fail:     read -formal -DWANT_FAIL tiny.v
+verdict_unknown:  read -formal -DWANT_UNKNOWN tiny.v
+verdict_error:    read -formal broken_syntax.v
+verdict_error:    prep -top broken_syntax
+verdict_pass:     prep -top tiny
+verdict_fail:     prep -top tiny
+verdict_unknown:  prep -top tiny
+
+[files]
+tiny.v
+broken_syntax.v

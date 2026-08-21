@@ -1,0 +1,37 @@
+[tasks]
+good
+bad1
+bad2
+bad3
+cover
+
+[options]
+good:  mode bmc
+bad1:  mode bmc
+bad2:  mode bmc
+bad3:  mode bmc
+cover: mode cover
+# Deep enough to push a four-deep queue past its wrap and pop the tracked
+# item out the far side.
+depth 14
+
+[engines]
+smtbmc z3
+
+[script]
+good:  read -formal good.v
+bad1:  read -formal bad1_off_by_one.v
+bad2:  read -formal bad2_overwrites.v
+bad3:  read -formal bad3_never_advances.v
+cover: read -formal good.v
+read -formal props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+props.v
+formal_top.v
+dut/good.v
+dut/bad1_off_by_one.v
+dut/bad2_overwrites.v
+dut/bad3_never_advances.v

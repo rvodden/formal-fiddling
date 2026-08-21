@@ -1,0 +1,37 @@
+# The same correct design in all four tasks. What changes is the MODE --
+# bounded search versus induction -- and whether the invariant is present.
+#
+#   bmc            bounded, no invariant     PASS
+#   prove_weak     induction, no invariant   UNKNOWN  <- not FAIL
+#   prove_strong   induction, invariant      PASS
+#   cover          reachability              PASS
+
+[tasks]
+bmc
+prove_weak
+prove_strong
+cover
+
+[options]
+bmc:           mode bmc
+prove_weak:    mode prove
+prove_strong:  mode prove
+cover:         mode cover
+depth 14
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal fifo_ptrs.v
+prove_strong:  read -formal -DSTRENGTHEN props.v
+bmc:           read -formal props.v
+prove_weak:    read -formal props.v
+cover:         read -formal props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+fifo_ptrs.v
+props.v
+formal_top.v

@@ -1,0 +1,40 @@
+[tasks]
+good
+bad1
+bad2
+bad3
+cover
+
+[options]
+good:  mode bmc
+bad1:  mode bmc
+bad2:  mode bmc
+bad3:  mode bmc
+cover: mode cover
+# Deep enough to drive the counter all the way round its sixteen states
+# and back to zero, which is where bad2's skip lives and where the wrap
+# cover statement is aiming.
+depth 24
+
+[engines]
+smtbmc z3
+
+[script]
+# Basenames, not dut/ paths: sby flattens [files] into the task's src/
+# directory. See the note in exercise 01's prove.sby.
+good:  read -formal good.v
+bad1:  read -formal bad1_binary.v
+bad2:  read -formal bad2_skips.v
+bad3:  read -formal bad3_ignores_inc.v
+cover: read -formal good.v
+read -formal props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+props.v
+formal_top.v
+dut/good.v
+dut/bad1_binary.v
+dut/bad2_skips.v
+dut/bad3_ignores_inc.v

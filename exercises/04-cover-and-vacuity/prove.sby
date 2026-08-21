@@ -1,0 +1,38 @@
+# Four tasks over two switches. The design is the same broken FIFO in all
+# four; the only thing that ever changes is whether A3 is in force and
+# whether we are asking about assertions or about reachability.
+#
+#   A3 on   assertions -> hollow        PASS   the bug, hidden
+#   A3 on   reachability -> hollow_cover FAIL  the alarm
+#   A3 off  assertions -> honest        FAIL   the bug, visible
+#   A3 off  reachability -> honest_cover PASS  a healthy model
+
+[tasks]
+hollow
+hollow_cover
+honest
+honest_cover
+
+[options]
+hollow:        mode bmc
+honest:        mode bmc
+hollow_cover:  mode cover
+honest_cover:  mode cover
+depth 20
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal fifo_ctrl.v
+hollow:        read -formal props.v
+hollow_cover:  read -formal props.v
+honest:        read -formal -DHONEST props.v
+honest_cover:  read -formal -DHONEST props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+fifo_ctrl.v
+props.v
+formal_top.v

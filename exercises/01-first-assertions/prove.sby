@@ -1,0 +1,43 @@
+[tasks]
+good
+bad1
+bad2
+bad3
+cover
+
+[options]
+good:  mode bmc
+bad1:  mode bmc
+bad2:  mode bmc
+bad3:  mode bmc
+cover: mode cover
+# Depth 2, not 32. The design is combinational: one step shows every
+# behaviour it has. The second step costs nothing and keeps the trace
+# renderer happy about having something to render.
+depth 2
+
+[engines]
+smtbmc z3
+
+[script]
+# NOTE the basenames. sby FLATTENS everything in [files] into the task's
+# src/ directory, so `dut/good.v' listed below arrives as `src/good.v'
+# and a script line saying `read -formal dut/good.v' fails with "File not
+# found" -- while the file is sitting right there. Directory structure
+# survives in [files] and does not survive into [script].
+good:  read -formal good.v
+bad1:  read -formal bad1_highest.v
+bad2:  read -formal bad2_always_valid.v
+bad3:  read -formal bad3_one_line_wrong.v
+cover: read -formal good.v
+read -formal props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+props.v
+formal_top.v
+dut/good.v
+dut/bad1_highest.v
+dut/bad2_always_valid.v
+dut/bad3_one_line_wrong.v

@@ -1,0 +1,39 @@
+# The same design and the same properties in all four tasks. The only
+# thing that ever changes is `depth' -- and the mode, to ask the
+# reachability question alongside the assertion one.
+#
+#   depth 20   assertions   -> shallow        PASS   (and it is a lie)
+#   depth 20   reachability -> shallow_cover  FAIL   (which is the alarm)
+#   depth 64   assertions   -> deep           FAIL   (the truth)
+#   depth 64   reachability -> deep_cover     PASS
+
+[tasks]
+shallow
+shallow_cover
+deep
+deep_cover
+
+[options]
+shallow:        mode bmc
+deep:           mode bmc
+shallow_cover:  mode cover
+deep_cover:     mode cover
+
+shallow:        depth 20
+shallow_cover:  depth 20
+deep:           depth 64
+deep_cover:     depth 64
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal watchdog.v
+read -formal props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+watchdog.v
+props.v
+formal_top.v

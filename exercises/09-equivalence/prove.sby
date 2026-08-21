@@ -1,0 +1,39 @@
+[tasks]
+good
+bad1
+bad2
+bad3
+cover
+
+[options]
+good:  mode bmc
+bad1:  mode bmc
+bad2:  mode bmc
+bad3:  mode bmc
+cover: mode cover
+# The pipeline is one deep, so everything of interest happens within a
+# couple of clocks of reset. There is no depth to chase here.
+depth 8
+
+[engines]
+smtbmc z3
+
+[script]
+read -formal popcount_ref.v
+good:  read -formal good.v
+bad1:  read -formal bad1_drops_a_bit.v
+bad2:  read -formal bad2_wrong_latency.v
+bad3:  read -formal bad3_or_not_add.v
+cover: read -formal good.v
+read -formal props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+popcount_ref.v
+props.v
+formal_top.v
+dut/good.v
+dut/bad1_drops_a_bit.v
+dut/bad2_wrong_latency.v
+dut/bad3_or_not_add.v

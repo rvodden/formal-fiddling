@@ -1,0 +1,37 @@
+[tasks]
+good
+bad1
+bad2
+bad3
+cover
+
+[options]
+good:  mode bmc
+bad1:  mode bmc
+bad2:  mode bmc
+bad3:  mode bmc
+cover: mode cover
+# Comfortably past MAX_WAIT so a starving master has room to exceed the
+# bound and be seen doing it.
+depth 16
+
+[engines]
+smtbmc z3
+
+[script]
+good:  read -formal good.v
+bad1:  read -formal bad1_strict_priority.v
+bad2:  read -formal bad2_grants_both.v
+bad3:  read -formal bad3_deadlocks.v
+cover: read -formal good.v
+read -formal props.v
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+props.v
+formal_top.v
+dut/good.v
+dut/bad1_strict_priority.v
+dut/bad2_grants_both.v
+dut/bad3_deadlocks.v

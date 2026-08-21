@@ -1,0 +1,51 @@
+# Five tasks over two switches, so that each pair differs in exactly one
+# thing. `vacuous' and `buggy' differ only in the assumption; `cover' and
+# `vacuous_cover' differ only in the assumption too. Isolating the
+# variable is the point -- otherwise "it passed" has two candidate causes.
+#
+# Task labels are enumerated one per line rather than negated with `~'.
+# sby accepts `~task:' for a single label, and the temptation is to write
+# `~vacuous ~vacuous_cover:' for the rest; that parses as a yosys command
+# and the whole run dies with "No such command". Enumerating is longer and
+# says what it means.
+
+[tasks]
+buggy
+fixed
+cover
+vacuous
+vacuous_cover
+
+[options]
+buggy:          mode bmc
+fixed:          mode bmc
+vacuous:        mode bmc
+cover:          mode cover
+vacuous_cover:  mode cover
+depth 24
+
+[engines]
+smtbmc z3
+
+[script]
+# The design: broken except where FIXED is defined.
+buggy:          read -formal sat_counter.v
+vacuous:        read -formal sat_counter.v
+fixed:          read -formal -DFIXED sat_counter.v
+cover:          read -formal -DFIXED sat_counter.v
+vacuous_cover:  read -formal -DFIXED sat_counter.v
+
+# The properties: honest except where OVERCONSTRAIN is defined.
+buggy:          read -formal props.v
+fixed:          read -formal props.v
+cover:          read -formal props.v
+vacuous:        read -formal -DOVERCONSTRAIN props.v
+vacuous_cover:  read -formal -DOVERCONSTRAIN props.v
+
+read -formal formal_top.v
+prep -top formal_top
+
+[files]
+sat_counter.v
+props.v
+formal_top.v
