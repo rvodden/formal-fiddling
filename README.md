@@ -278,19 +278,23 @@ is plausible rather than that it is the answer.
 A 4-bit Gray counter. Exactly one bit changes per step, which is why Gray
 codes are what you put across a clock domain crossing.
 
-**Watch for:** two of the four broken designs make nothing but legal Gray
-steps, and no property about transitions can see either.
+**Watch for:** three of the five broken designs make nothing but legal
+Gray steps, and no property about transitions can see any of them.
 
 `bad3` is free-running — it advances when told to hold. `bad4` cycles
-`0000 → 0001 → 0011 → 0010 → 0000` for ever: one bit changes on every step
-including the wrap, it holds when told to, it resets to zero, and it
-cannot count past three.
+`0000 → 0001 → 0011 → 0010 → 0000` for ever: one bit per step including
+the wrap, holds when told to, resets to zero, and cannot count past three.
+`bad5` walks eight steps out along a path and retraces it home — back at
+zero on the sixteenth increment and not before, having visited nine of the
+sixteen values.
 
 "One bit changes at a time" feels like the definition of a Gray counter.
 It is a third of it. You also have to say when it may move, and that it
-goes all the way round — which is why the exercise opens with a numbered
-specification and why clauses 3 and 4 are independent in both directions:
-`bad1` breaks 3 and satisfies 4, `bad4` the reverse.
+goes all the way round — and *that* last part is itself two claims, a
+return period and a coverage claim, which `bad5` separates.
+
+`bad5` is in the repo because a reader's property set caught it and the
+reference solution did not.
 
 ### 03 — assuming the environment
 

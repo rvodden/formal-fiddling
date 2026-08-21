@@ -4,6 +4,7 @@ bad1
 bad2
 bad3
 bad4
+bad5
 cover
 
 [options]
@@ -12,6 +13,7 @@ bad1:  mode bmc
 bad2:  mode bmc
 bad3:  mode bmc
 bad4:  mode bmc
+bad5:  mode bmc
 cover: mode cover
 # Deep enough to drive the counter all the way round its sixteen states
 # and back to zero, which is where bad2's skip lives and where the wrap
@@ -29,6 +31,7 @@ bad1:  read -formal bad1_binary.v
 bad2:  read -formal bad2_skips.v
 bad3:  read -formal bad3_ignores_inc.v
 bad4:  read -formal bad4_short_cycle.v
+bad5:  read -formal bad5_retrace.v
 cover: read -formal good.v
 read -formal props.v
 read -formal formal_top.v
@@ -42,3 +45,4 @@ dut/bad1_binary.v
 dut/bad2_skips.v
 dut/bad3_ignores_inc.v
 dut/bad4_short_cycle.v
+dut/bad5_retrace.v

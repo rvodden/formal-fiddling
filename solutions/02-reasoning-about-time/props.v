@@ -1,9 +1,14 @@
 // Reference solution for exercise 02 -- properties for a Gray counter.
 //
-// Four assertions and three cover statements, one assertion per clause of
-// the specification. Between them they leave a wrong implementation
-// nowhere to go -- and it takes all four: each of the four broken designs
-// in dut/ is caught by a different one.
+// Five assertions and five cover statements. Clause 4 needs two of them:
+// one for the return period and one for visiting every value, because a
+// design can satisfy the first and fail the second.
+//
+// That second property is not the one this file shipped with. The
+// original checked the period alone and passed dut/bad5_retrace.v --
+// a reader's property set turned out to be stronger than the reference,
+// which is the best possible outcome for an exercise and the reason both
+// the property and the DUT are now here.
 
 `default_nettype none
 
@@ -96,6 +101,36 @@ module props (
     always @(*)
         if (f_past_valid && !rst) assert((gray == 4'd0) == (f_inc == 4'd0));
 
+    // P5. And it visits all sixteen values on the way round -- clause 4's
+    //     SECOND sentence, which P4 does not cover.
+    //
+    //     P4 checks the return PERIOD: sixteen increments, back to zero.
+    //     A counter can satisfy that and still visit nine of the sixteen
+    //     values, by walking eight steps out along a path and retracing
+    //     it home. Every step changes one bit, it is at zero on the
+    //     sixteenth increment and nowhere in between, and it is not a
+    //     counter. That design is dut/bad5_retrace.v.
+    //
+    //     f_seen carries one bit per value: set the bit for whatever is on
+    //     show at each increment, and start a fresh cycle -- just the zero
+    //     -- on the increment that returns the counter to zero. Over one
+    //     full cycle it accumulates gray(0) through gray(15), so a
+    //     complete cycle fills it and anything less does not.
+    //
+    //     Recording the value being LEFT rather than the one arrived at is
+    //     what makes the bookkeeping line up: the increment out of step 15
+    //     records gray(15), which is the last one missing.
+    reg [15:0] f_seen;
+    always @(posedge clk)
+        if (rst)                       f_seen <= 16'h0001;
+        else if (inc && f_inc == 4'd0) f_seen <= 16'h0001;
+        else if (inc)                  f_seen[gray] <= 1'b1;
+
+    always @(posedge clk)
+        if (f_past_valid && !rst && !$past(rst)
+            && $past(inc) && $past(f_inc) == 4'd15)
+            assert(f_seen == 16'hFFFF);
+
     // ------------------------------------------------------------------
     // Note what is NOT here: any assumption about `inc'. It is a free
     // input, every pattern of it is legal, and constraining it could only
@@ -119,6 +154,18 @@ module props (
         cover(!$past(inc));                              // it can be held
         cover($past(inc) && changed != 4'd0);            // and advanced
         cover($past(gray) == 4'b1000 && gray == 4'd0);   // and wrapped
+
+        // P5's assertion sits behind two conditions the solver controls,
+        // so on its own it could be a hollow PASS -- never evaluated, and
+        // indistinguishable from a property that holds. These two are the
+        // evidence that it runs: the wrap increment happens, and f_seen
+        // really does fill up.
+        //
+        // Any assertion buried under a guard deserves this. It is the
+        // exercise-04 discipline applied to your own bookkeeping rather
+        // than to an assumption.
+        cover($past(inc) && $past(f_inc) == 4'd15);
+        cover(f_seen == 16'hFFFF);
     end
 
 endmodule

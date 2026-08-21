@@ -106,9 +106,26 @@
 // starts at zero -- and it cannot count past three. That design is
 // dut/bad4_short_cycle.v, and only clause 4 sees it.
 //
-// The two clauses are independent in both directions, which is why the
+// Clauses 3 and 4 are independent in both directions, which is why the
 // exercise needs both: bad1 satisfies clause 4 and breaks clause 3, bad4
 // satisfies clause 3 and breaks clause 4.
+//
+// CLAUSE 4 IS ITSELF TWO CLAIMS, and they come apart too.
+//
+//   "sixteen increments bring it back to 0, and no fewer do"  -- a claim
+//   about the return PERIOD
+//
+//   "it visits all sixteen values before repeating"           -- a claim
+//   about COVERAGE
+//
+// A design can satisfy the first and fail the second, by walking eight
+// steps out along a path and retracing it home: one bit per step, at zero
+// on the sixteenth increment and nowhere in between, and it only ever
+// reaches nine of the sixteen values. That is dut/bad5_retrace.v.
+//
+// It is here because a reader's property set caught it and the reference
+// solution did not. Checking the period is the obvious reading of clause
+// 4, and it is half of it.
 //
 // ---------------------------------------------------------------------
 // WHAT TO DO
@@ -119,9 +136,13 @@
 //   make bad3   must FAIL  -- free-running: it advances when told to hold
 //   make bad4   must FAIL  -- a legal Gray cycle over four of the sixteen
 //                             values. Clause 3 cannot see it.
+//   make bad5   must FAIL  -- returns to zero on the sixteenth increment
+//                             and no sooner, and still visits only nine
+//                             of the sixteen values. Clause 4's first
+//                             sentence cannot see it.
 //   make cover  must PASS
 //
-//   make        all six, with each verdict checked
+//   make        all seven, with each verdict checked
 //
 // ---------------------------------------------------------------------
 // bad3 IS THE POINT OF THIS EXERCISE
@@ -162,14 +183,29 @@ module props (
     //   - clause 1: coming out of reset, the counter reads zero
     //   - clause 2: while inc is low, the value does not change
     //   - clause 3: while inc is high, exactly one bit changes
-    //   - clause 4: it does not return to zero early. Count the
-    //     increments since reset, modulo 16, and require the counter to
-    //     read zero exactly when that count does.
+    //   - clause 4, first sentence: it does not return to zero early.
+    //     Count the increments since reset, modulo 16, and require the
+    //     counter to read zero exactly when that count does.
+    //   - clause 4, second sentence: it visits every value. Keep a bit
+    //     per value, set the bit for whatever is on show at each
+    //     increment, start a fresh set when the counter comes back to
+    //     zero, and require a full set at the wrap. This is the one that
+    //     catches bad5, and the first sentence cannot.
     //
-    // "While inc is high the value DOES change" is worth noticing and
-    // not worth writing: clause 3's "exactly one bit" already says it.
-    // An assertion that can never be the first to fail costs solver time
-    // and buys nothing.
+    // A note on "while inc is high the value DOES change", because how
+    // much you need it depends on how you write clause 3.
+    //
+    // "Exactly one bit changes" implies the value changes, so as a
+    // statement about the specification it is redundant. But the natural
+    // way to write "one bit" is the bit-twiddling identity
+    //
+    //     (changed & (changed - 1)) == 0
+    //
+    // and that is "AT MOST one bit" -- it is satisfied by changed == 0.
+    // Written that way you do need the second half, either as `changed !=
+    // 0' in the same assertion or as an assertion of its own. Both are
+    // fine; what is not fine is writing only the identity and thinking it
+    // says more than it does.
     //
     // No `assume' about inc is needed or wanted. inc is a free input and
     // every value of it on every step is legal stimulus; assuming
@@ -185,6 +221,14 @@ module props (
     //     Covering it says your stimulus really does drive the counter
     //     all the way round within the depth prove.sby asks for, which
     //     is what clause 4 needs in order to have been tested at all.
+    //
+    // And one more, once you have written clause 4's second sentence:
+    // cover the moment its assertion FIRES. That assertion necessarily
+    // sits behind a guard -- "when the counter comes back to zero" -- and
+    // an assertion behind a guard the solver controls may never be
+    // evaluated at all. A run in which it never ran passes, and looks
+    // exactly like a run in which it held. This is exercise 04's lesson
+    // pointed at your own bookkeeping instead of at an assumption.
     // ------------------------------------------------------------------
 
 endmodule
