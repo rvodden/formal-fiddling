@@ -452,6 +452,13 @@ So `ERROR` is its own verdict, it matches nothing, and the verdict is
 parsed out of sby's summary rather than taken from its exit status —
 which cannot tell a broken proof from a broken build.
 
+The same trap has a second door. A `cover` task with **no cover statements
+to reach** passes instantly, and sby's PASS line is identical to the one a
+real cover run prints — so an exercise could be completed with the cover
+statements simply left out. That is the hollow PASS exercise 04 exists to
+teach against, so the harness reports it as `empty`, which matches
+nothing. (Found by a reader, whose exercise 01 went green without them.)
+
 `make selftest` checks that the runner still tells `pass`, `fail`,
 `unknown` and `error` apart, in both directions, and `make` runs it first
 and stops if it fails. It has been seen to fail: break `run.sh` so ERROR

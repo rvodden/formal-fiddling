@@ -1,16 +1,22 @@
-# Four tasks, one for each verdict mk/run.sh has to be able to tell apart.
+# One task per verdict mk/run.sh has to be able to tell apart, plus the
+# pair that pins down empty-versus-real cover runs -- which sby reports
+# identically and the harness must not.
 
 [tasks]
 verdict_pass
 verdict_fail
 verdict_unknown
 verdict_error
+verdict_cover
+verdict_empty
 
 [options]
 verdict_pass:     mode bmc
 verdict_fail:     mode bmc
 verdict_unknown:  mode prove
 verdict_error:    mode bmc
+verdict_cover:    mode cover
+verdict_empty:    mode cover
 depth 12
 
 [engines]
@@ -21,10 +27,14 @@ verdict_pass:     read -formal -DWANT_PASS tiny.v
 verdict_fail:     read -formal -DWANT_FAIL tiny.v
 verdict_unknown:  read -formal -DWANT_UNKNOWN tiny.v
 verdict_error:    read -formal broken_syntax.v
+verdict_cover:    read -formal tiny.v
+verdict_empty:    read -formal -DNO_COVER tiny.v
 verdict_error:    prep -top broken_syntax
 verdict_pass:     prep -top tiny
 verdict_fail:     prep -top tiny
 verdict_unknown:  prep -top tiny
+verdict_cover:    prep -top tiny
+verdict_empty:    prep -top tiny
 
 [files]
 tiny.v

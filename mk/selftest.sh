@@ -20,9 +20,11 @@
 # is why the verdict is parsed out of sby's summary rather than taken from
 # its exit status, which cannot tell the two apart.
 #
-# So: four fixtures, one per verdict, each checked in both directions --
-# the harness must accept the right expectation and reject every wrong
-# one.
+# The same applies to an empty cover run, which sby reports exactly as it
+# reports a real one -- see the note in run.sh.
+#
+# So: a fixture per verdict, each checked in both directions -- the
+# harness must accept the right expectation and reject every wrong one.
 # =====================================================================
 
 SBY="${1:-sby}"
@@ -68,6 +70,17 @@ check verdict_pass    fail    reject
 check verdict_fail    pass    reject
 check verdict_unknown pass    reject
 check verdict_unknown fail    reject
+
+# A cover run that reached something is a pass...
+check verdict_cover   pass    accept
+
+# ...and one that reached nothing, because the property file has no cover
+# statements, is not. sby reports the two identically; the harness must
+# not. Accepting it would award a tick for the exact hollow PASS that
+# exercise 04 exists to teach against.
+check verdict_empty   pass    reject
+check verdict_empty   fail    reject
+check verdict_empty   unknown reject
 
 # THE IMPORTANT ONES. A design that does not build must not satisfy any
 # expectation at all -- least of all `fail', which is what most tasks in

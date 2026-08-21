@@ -37,7 +37,13 @@ module tiny (
     always @(*) if (pv) assert(c != 16'd7);
 `endif
 
+`ifndef NO_COVER
     always @(posedge clk) if (pv) cover(c == 16'd4);
+`endif
+    // With NO_COVER defined this module has no cover statements at all,
+    // which is what the `verdict_empty' task needs: a cover run with
+    // nothing to reach passes instantly, and the harness must not accept
+    // that as a pass.
 
 endmodule
 

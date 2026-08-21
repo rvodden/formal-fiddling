@@ -53,6 +53,10 @@ Two knobs do all the work:
 |---|---|---|---|---|
 | `bmc` | a trace that **breaks** an `assert` | your `cover` statements | no counterexample found | here is one |
 | `cover` | a trace that **reaches** each `cover` | your `assert` statements | every one was reachable | one was not |
+
+If you have written no cover statements, a `cover` task passes instantly
+and has checked nothing — so the harness reports that as `empty` rather
+than as a pass. See below.
 | `prove` | both halves of an induction proof | your `cover` statements | proved for all time | see §6 |
 
 So **`make cover` is not a second opinion on your assertions.** In
@@ -80,9 +84,16 @@ when every verdict matches — which means passing the correct design **and
 failing every broken one**. A task printing `fail as expected` is good
 news.
 
-This is also why `ERROR` is a verdict of its own and never satisfies
-anything. Most tasks here are meant to fail, so a property file with a
-typo in it would otherwise go green nearly everywhere.
+Two verdicts are never expected, only reported, and both exist because
+sby prints them in words indistinguishable from a real result:
+
+- **`error`** — the design did not build. Most tasks here are meant to
+  fail, so a property file with a typo in it would otherwise go green
+  nearly everywhere.
+- **`empty`** — a `cover` task passed having reached *no cover statement
+  at all*, because the file contains none. An empty cover set is
+  satisfiable instantly. That is the hollow PASS of section 7, so the
+  harness refuses to award it a tick.
 
 ### Running one at a time
 
