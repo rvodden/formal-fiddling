@@ -160,6 +160,18 @@ module props (
     //   - a trace where idx is 7
     // ------------------------------------------------------------------
 
+    always @(*) begin
+        if (req == 0) assert(vld == 0); else assert(vld == 1);
+        if ( (req & 8'b0000_0001) == 8'b0000_0001 ) assert(idx == 0);
+        if ( (req & 8'b0000_0011) == 8'b0000_0010 ) assert(idx == 1);
+        if ( (req & 8'b0000_0111) == 8'b0000_0100 ) assert(idx == 2);
+        if ( (req & 8'b0000_1111) == 8'b0000_1000 ) assert(idx == 3);
+        if ( (req & 8'b0001_1111) == 8'b0001_0000 ) assert(idx == 4);
+        if ( (req & 8'b0011_1111) == 8'b0010_0000 ) assert(idx == 5);
+        if ( (req & 8'b0111_1111) == 8'b0100_0000 ) assert(idx == 6);
+        if ( (req & 8'b1111_1111) == 8'b1000_0000 ) assert(idx == 7);
+    end
+
 endmodule
 
 `default_nettype wire
