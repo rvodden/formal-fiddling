@@ -57,17 +57,30 @@ TASKNAMES := $(foreach t,$(TASKS),$(firstword $(subst :, ,$(t))))
 
 .PHONY: all solution selftest trace wave clean $(TASKNAMES)
 
+# Bare `make' means `make all', and saying so is not optional.
+#
+# make takes its default goal from the FIRST target in the file, and this
+# file is included by an exercise Makefile that defines no targets of its
+# own -- so whatever happens to be first here is what a bare `make' runs.
+# When `selftest' was added it landed above `all', and every exercise
+# quietly started answering `make' with nothing but the self-test line.
+#
+# It survived a full-suite check because the repo-root sweep names the
+# target: `$(MAKE) -C exercises/NN all'. Naming it meant the default-goal
+# path was the one thing the sweep could not see.
+.DEFAULT_GOAL := all
+
+# Run against YOUR file, which is already where prove.sby expects it.
+all: selftest
+	@echo "  $(EXNAME) -- your properties"
+	@$(ROOT)/mk/run.sh "$(SBY)" "$(CURDIR)/$(SBYFILE)" "$(EXNAME)" $(TASKS)
+
 # The harness proves itself before it judges you. SELFTEST_DONE is set by
 # the repo-root sweep, which has already run it once -- without that, a
 # sweep over eleven exercises would re-prove the same ten fixtures eleven
 # more times.
 selftest:
 	@if [ -z "$(SELFTEST_DONE)" ]; then $(ROOT)/mk/selftest.sh "$(SBY)"; fi
-
-# Run against YOUR file, which is already where prove.sby expects it.
-all: selftest
-	@echo "  $(EXNAME) -- your properties"
-	@$(ROOT)/mk/run.sh "$(SBY)" "$(CURDIR)/$(SBYFILE)" "$(EXNAME)" $(TASKS)
 
 # Run against the reference. Build a scratch copy of the whole exercise
 # with the reference file swapped in, so that sby sees one arrangement and

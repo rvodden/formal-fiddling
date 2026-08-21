@@ -31,11 +31,20 @@ all: test
 # and has to stop everything if it fails, because every line the exercises
 # print afterwards is the harness's word for it -- and a broken harness
 # does not go quiet, it goes green.
+#
+# Note the sweep below runs a BARE `make' in each exercise rather than
+# naming `all'. That is deliberate too. Naming the target skips make's
+# default-goal resolution, which is the one thing an exercise Makefile
+# leaves entirely to mk/formal.mk -- and a sweep that names it cannot see
+# a default goal that has drifted onto some other target. It happened:
+# adding `selftest' put it first in the file, so every exercise answered
+# a bare `make' with the self-test line and nothing else, while this sweep
+# stayed green throughout. Run what a reader runs.
 test: selftest
 	@fail=0; \
 	for e in $(EXERCISES); do \
 	  printf '%-28s ' $$e; \
-	  if $(MAKE) -s -C exercises/$$e all SBY=$(SBY) SELFTEST_DONE=1 >/dev/null 2>&1; \
+	  if $(MAKE) -s -C exercises/$$e SBY=$(SBY) SELFTEST_DONE=1 >/dev/null 2>&1; \
 	    then echo PASS; else echo FAIL; fail=1; fi; \
 	done; \
 	echo; \
