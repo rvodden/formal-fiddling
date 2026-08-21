@@ -33,6 +33,30 @@
 # The step counter is what the solver actually reasoned about.
 #
 # ---------------------------------------------------------------------
+# WHY TWO COLUMNS GET MARKED
+#
+# sby names the step at which an assertion failed, and for a CLOCKED
+# assertion that step is one later than the state whose values break it.
+# An `always @(posedge clk)' assertion is checked on the edge LEAVING a
+# state, and reported against the state it arrives in.
+#
+# Measured, on one design with one violated condition written both ways:
+#
+#     always @(*)           assert(c != 3)   ->  sby says step 4
+#     always @(posedge clk) assert(c != 3)   ->  sby says step 5
+#
+# with c first reaching 3 at step 4 in both traces.
+#
+# Marking only the step sby names therefore puts the asterisk on a column
+# where, for a clocked assertion, nothing is wrong -- and the reader
+# concludes the tool is lying to them. It is not; it is answering a
+# question one step to the right of the one they asked.
+#
+# There is no reliable way to tell from sby's output which kind of
+# assertion failed, so both columns are marked and the legend says which
+# is which. Guessing would be worse than explaining.
+#
+# ---------------------------------------------------------------------
 # WHY IDENTICAL SIGNALS ARE COLLAPSED BY DEFAULT
 #
 # A harness has the DUT and the property module watching the same wire,
@@ -239,7 +263,12 @@ def main():
         head = " " * (label_w + 2)
         for s in chunk:
             n = s["__step__"]
-            tag = f"{n}*" if (mark is not None and n == mark) else str(n)
+            if mark is not None and n == mark:
+                tag = f"{n}*"
+            elif mark is not None and n == mark - 1:
+                tag = f"{n}<"
+            else:
+                tag = str(n)
             head += tag.rjust(cell_w + 1)
         print(head)
         print("  " + "-" * (label_w + (cell_w + 1) * len(chunk)))
@@ -253,7 +282,12 @@ def main():
         print()
 
     if mark is not None:
-        print(f"  * step {mark} is where the assertion failed.")
+        print(f"  * step {mark} is the step sby named.")
+        if mark > 0:
+            print(f"  < step {mark - 1} is the state a CLOCKED assertion was evaluated on.")
+            print(f"    An `always @(posedge clk)' assertion is checked on the edge LEAVING")
+            print(f"    a state and reported one step later, so for those read the `<'")
+            print(f"    column. For `always @(*)' the `*' column is the one that matters.")
     if hidden:
         print(f"  ({hidden} row{'s' if hidden > 1 else ''} hidden as duplicates "
               f"of a row above -- `--all' shows them.)")

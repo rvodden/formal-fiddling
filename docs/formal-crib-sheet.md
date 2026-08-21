@@ -151,8 +151,23 @@ first:
 
 - **step 0.** Is `rst` high? If not, you are reading an induction trace
   (section 6) and step 0 is allowed to be nonsense.
-- **the marked step.** That is where the assertion failed. What changed
-  on the step before it?
+- **the marked steps.** `make trace` marks two columns, and which one you
+  read depends on the assertion:
+
+  | assertion | read |
+  |---|---|
+  | `always @(*)` | the `*` column — the step sby named |
+  | `always @(posedge clk)` | the `<` column, one step earlier |
+
+  A clocked assertion is checked on the edge *leaving* a state and
+  reported against the state it arrives in, so sby's step number is one
+  later than the values that break it. Measured, on one design with one
+  violated condition written both ways: the combinational version is
+  reported at step 4 and the clocked version at step 5, with the offending
+  value first appearing at step 4 in both.
+
+  Read the `*` column for a clocked assertion and it will look as though
+  nothing is wrong — because at that step nothing is.
 - **the inputs.** Did the environment do something a real one never
   would? That is an assumption you have not written.
 

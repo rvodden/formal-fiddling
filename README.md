@@ -435,9 +435,17 @@ $ make trace TASK=buggy
   rst                     1    0    0    0    0    0    0    0    0    0    0    0    0    0
   u_props.f_past_valid    0    1    1    1    1    1    1    1    1    1    1    1    1    1
 
-  * step 12 is where the assertion failed.
+  * step 12 is the step sby named.
+  < step 11 is the state a CLOCKED assertion was evaluated on.
+    An `always @(posedge clk)' assertion is checked on the edge LEAVING
+    a state and reported one step later, so for those read the `<'
+    column. For `always @(*)' the `*' column is the one that matters.
   (6 rows hidden as duplicates of a row above -- `--all' shows them.)
 ```
+
+Two columns are marked because sby's step number means different things
+for the two kinds of assertion, and nothing in its output says which kind
+failed. Read `*` for `always @(*)`, `<` for `always @(posedge clk)`.
 
 `make wave` still opens gtkwave, but a waveform viewer is a poor fit for
 the first fortnight: these traces are eight to thirty steps long, which is
