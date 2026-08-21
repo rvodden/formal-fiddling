@@ -225,7 +225,7 @@ module props (
     // property: if last clock there was a request and no acknowledge,
     // then this clock req is still high and addr is unchanged.
     // ------------------------------------------------------------------
-
+    
 
     // ------------------------------------------------------------------
     // TODO -- ASSERTIONS: what the slave owes.
@@ -262,14 +262,6 @@ module props (
     // model checker can actually settle. Exercise 08 is about how far
     // that can be pushed and where it stops.
     // ------------------------------------------------------------------
-
-    // Clause 4 - `ack` is never high unless `req` is.
-    always @(*) if(ack) assert(req);
-
-    // Clause 5 - `ack` is never high on the clock after a reset
-    always @(posedge clk) if($past(rst)) assert(!ack);
-
-    // Clause 6 - One request draws exactly one ack: it is high for one clock.
     reg req_recieved = 1'b0;
     always @(posedge clk) begin
         if (req) req_recieved <= 1'b1;
@@ -277,24 +269,33 @@ module props (
     end
 
     always @(posedge clk) if ( f_past_valid && !rst && !$past(rst)) begin
+        // Clause 4 - `ack` is never high unless `req` is.
+        if(ack) assert(req);
+
+        // Clause 5 - `ack` is never high on the clock after a reset
+        if($past(rst)) assert(!ack);
+
+        // Clause 6 - One request draws exactly one ack: it is high for one clock.
         if (ack)        assert(req_recieved);
         if ($past(ack)) assert(~ack);
+
+        // Clause 7 - ack arrives EXACTLY latency(addr) clocks after req appears.
+        if (ack) assert (f_outstanding == {1'b0, latency});
+
+        // Clause 8 - ack arrives at all, within 4 clocks -- 4 being the slowest
+        // address the map allows.
+        assert (f_outstanding <= 4);
     end
 
-    // Clause 7 - ack arrives EXACTLY latency(addr) clocks after req appears.
-    integer counter = 0;
-    always @(posedge clk) begin
-        if (req_recieved) counter <= counter + 1;
-    end
-    
-    always @(posedge clk) if ( f_past_valid && !rst && !$past(rst)) begin
-        if (ack) assert (counter == { {29{1'b0}}, addr });
-    end
+    // assumptions
+    // Clause 1: No request is outstanding while rst is high.
+    always @(posedge clk) if(rst) assume(!req);
 
-    // Clause 8 - ack arrives at all, within 4 clocks -- 4 being the slowest
-    //      address the map allows.
-    always @(*) assert (counter < 4);
+    // Clause 2: Once req is raised it stays raised until ack comes back.
+    always @(posedge clk) if(req_recieved) assume(req);
 
+    // Clause 3: addr does not change while a request is in flight.
+    always @(posedge clk) if(req_recieved) assume(addr == $past(addr));
 
     // ------------------------------------------------------------------
     // TODO -- COVER statements. Last.
