@@ -1,7 +1,10 @@
 # Top-level convenience targets.
 #
 #   make            the harness self-test, then every exercise against
-#                   YOUR property files
+#                   YOUR property files, then the lint
+#   make lint       just the lint over every exercise's property file:
+#                   what the Verilog says, rather than what the verdicts
+#                   say. Self-tests itself first.
 #   make solutions  the same against the reference property files. This
 #                   should always pass -- if it does not, the harness is
 #                   broken rather than you
@@ -15,7 +18,9 @@
 #
 # and see the README for the two shims that yowasp needs on PATH.
 
-SBY ?= sby
+SBY       ?= sby
+YOSYS     ?= yosys
+VERILATOR ?= verilator
 
 EXERCISES := 00-worked-example 01-first-assertions 02-reasoning-about-time \
              03-assuming-the-environment 04-cover-and-vacuity \
@@ -23,9 +28,18 @@ EXERCISES := 00-worked-example 01-first-assertions 02-reasoning-about-time \
              07-abstraction-anyconst 08-liveness-and-fairness \
              09-equivalence 10-capstone-skid-buffer
 
-.PHONY: all test solutions selftest clean
+.PHONY: all test solutions selftest lint lint-solutions lint-selftest clean
 
-all: test
+# Both, always, and fail if either did -- as in the Wishbone repo, and for
+# the same reason: they answer different questions and you want both
+# answers in one go. Here they are also two views of one failure. A
+# property narrowed to a single bit produces perfectly ordinary verdicts;
+# only the lint can say why they are ordinary.
+all:
+	@fail=0; \
+	$(MAKE) --no-print-directory test || fail=1; \
+	$(MAKE) --no-print-directory lint || fail=1; \
+	exit $$fail
 
 # Deliberately not `all: selftest test'. The self-test has to run FIRST
 # and has to stop everything if it fails, because every line the exercises
@@ -63,6 +77,46 @@ solutions: selftest
 	if [ $$fail -eq 0 ]; then echo "  every reference property set gives the expected verdicts"; \
 	else echo "  A REFERENCE FAILED. That is the harness, not you."; fi; \
 	exit $$fail
+
+lint: lint-selftest
+	@fail=0; \
+	for e in $(EXERCISES); do \
+	  printf '%-28s ' $$e; \
+	  $(MAKE) -s -C exercises/$$e lint YOSYS=$(YOSYS) VERILATOR=$(VERILATOR) \
+	      | sed 's/^  lint: props //' || fail=1; \
+	done; \
+	exit $$fail
+
+lint-solutions: lint-selftest
+	@fail=0; \
+	for e in $(EXERCISES); do \
+	  printf '%-28s ' $$e; \
+	  $(MAKE) -s -C exercises/$$e lint-solution YOSYS=$(YOSYS) VERILATOR=$(VERILATOR) \
+	      | sed 's/^  lint: props //' || fail=1; \
+	done; \
+	exit $$fail
+
+# The lint reports "clean", which is also what it reports when it has
+# stopped working. So it proves itself against fixtures first: one file
+# per bug it claims to catch, plus one with nothing wrong, and it must get
+# all six right.
+lint-selftest:
+	@ok=0; n=0; out=""; \
+	for c in clean:accept width_trunc:reject width_expand:reject \
+	         implicit_decl:reject mixed_assign:reject multi_driver:reject; do \
+	  m=$${c%%:*}; want=$${c##*:}; n=$$((n+1)); \
+	  if VERILATOR=$(VERILATOR) mk/lint.sh "$(YOSYS)" $$m mk/lint-selftest/$$m.v >/dev/null 2>&1; \
+	    then got=accept; else got=reject; fi; \
+	  if [ "$$got" = "$$want" ]; then ok=$$((ok+1)); \
+	  else out="$$out  $$m.v: the lint $$got""ed it, and should have $$want""ed it\n"; fi; \
+	done; \
+	if [ $$ok -eq $$n ]; then echo "  lint self-test: $$ok/$$n ok"; \
+	else echo "  lint self-test: $$ok/$$n ok -- THE LINT IS NOT WORKING"; echo; \
+	  printf "$$out"; echo; \
+	  echo "  Until this is fixed, ignore anything the lint says. A lint that has"; \
+	  echo "  stopped working does not go quiet -- it reports \"clean\", which is"; \
+	  echo "  also what it says when your file is fine."; \
+	  exit 1; fi
 
 selftest:
 	@mk/selftest.sh "$(SBY)"

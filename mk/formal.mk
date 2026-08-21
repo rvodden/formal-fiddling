@@ -13,9 +13,11 @@
 #
 # Then:
 #
-#   make                 prove the harness still works, then run every
-#                        task against YOUR file and check each verdict
-#                        against the one it should be
+#   make                 prove the harness still works, run every task
+#                        against YOUR file and check each verdict against
+#                        the one it should be, then lint it
+#   make lint            just the lint: what the Verilog says, rather
+#                        than what the verdicts say
 #   make solution        the same against the reference
 #   make <task>          run one task on its own and show sby's output
 #   make trace TASK=t    print the counterexample from task t as a
@@ -39,9 +41,15 @@
 # file, which is the property being taught.
 # ---------------------------------------------------------------------
 
-SBY      ?= sby
-PYTHON   ?= python3
-GTKWAVE  ?= gtkwave
+SBY       ?= sby
+YOSYS     ?= yosys
+VERILATOR ?= verilator
+PYTHON    ?= python3
+GTKWAVE   ?= gtkwave
+
+# Top module for `make lint'. Every exercise's property file declares a
+# module called props, so this never needs overriding.
+LINT_TOP  ?= props
 
 SBYFILE  ?= prove.sby
 TASK     ?=
@@ -55,7 +63,7 @@ WORKDIR  := $(basename $(SBYFILE))
 # which it would then try to rebuild.
 TASKNAMES := $(foreach t,$(TASKS),$(firstword $(subst :, ,$(t))))
 
-.PHONY: all solution selftest trace wave clean $(TASKNAMES)
+.PHONY: all run solution selftest lint lint-solution trace wave clean $(TASKNAMES)
 
 # Bare `make' means `make all', and saying so is not optional.
 #
@@ -70,10 +78,28 @@ TASKNAMES := $(foreach t,$(TASKS),$(firstword $(subst :, ,$(t))))
 # path was the one thing the sweep could not see.
 .DEFAULT_GOAL := all
 
-# Run against YOUR file, which is already where prove.sby expects it.
-all: selftest
+# Both, always, and fail if either did. Deliberately not `all: run lint',
+# which would skip the lint whenever a task gave the wrong verdict -- the
+# two answer different questions and you want both in one go. They are
+# also the two halves of the same failure: a property narrowed to one bit
+# gives perfectly ordinary-looking verdicts, and only the lint knows why.
+all:
+	@fail=0; \
+	$(MAKE) --no-print-directory run  || fail=1; \
+	$(MAKE) --no-print-directory lint || fail=1; \
+	exit $$fail
+
+run: selftest
 	@echo "  $(EXNAME) -- your properties"
 	@$(ROOT)/mk/run.sh "$(SBY)" "$(CURDIR)/$(SBYFILE)" "$(EXNAME)" $(TASKS)
+
+# What the Verilog says, as opposed to what the verdicts say. See
+# mk/lint.sh for why a property file needs this more than a design does.
+lint:
+	@VERILATOR="$(VERILATOR)" $(ROOT)/mk/lint.sh "$(YOSYS)" "$(LINT_TOP)" $(PROPS)
+
+lint-solution:
+	@VERILATOR="$(VERILATOR)" $(ROOT)/mk/lint.sh "$(YOSYS)" "$(LINT_TOP)" $(REF)
 
 # The harness proves itself before it judges you. SELFTEST_DONE is set by
 # the repo-root sweep, which has already run it once -- without that, a

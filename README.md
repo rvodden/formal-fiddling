@@ -52,7 +52,8 @@ lowRISC conventions, and the conventions specific to property files.
 
 ## Getting set up
 
-You need **yosys**, **SymbiYosys** and an **SMT solver**.
+You need **yosys**, **SymbiYosys** and an **SMT solver**, plus
+**verilator** for `make lint`.
 
 The easiest route on any platform is the prebuilt
 [OSS CAD Suite](https://github.com/YosysHQ/oss-cad-suite-build), a single
@@ -63,7 +64,12 @@ Otherwise, via pip:
 
 ```sh
 pip install yowasp-yosys z3-solver
+sudo apt install verilator          # or brew install verilator
 ```
+
+`verilator` is only used by `make lint`, which skips itself and says so if
+it is missing — but it is the check that lint mainly exists for, so it is
+worth having.
 
 `yowasp-yosys` brings SymbiYosys with it. This installs the binaries under
 `yowasp-` names, so tell make about it:
@@ -98,7 +104,9 @@ per invocation.
 
 ```sh
 cd exercises/01-first-assertions
-make               # every task, with each verdict checked
+make               # every task with its verdict checked, then the lint
+make run           # just the tasks
+make lint          # just the lint
 make good          # just that one task, with sby's own output
 make trace TASK=bad1   # the counterexample, as a table
 make wave  TASK=bad1   # the same thing in gtkwave
@@ -109,6 +117,41 @@ make clean
 `make` fails loudly with a list of which tasks gave the wrong verdict and
 why. `make solution` should always pass — if it does not, the harness is
 broken, not you.
+
+### `make lint`, and why the right verdicts are not enough
+
+The tasks ask whether your properties get the right answers. The lint asks
+whether the Verilog you wrote says what you meant — a different question,
+and there is a whole class of bug living in the gap.
+
+The one it mainly exists for is a **narrowed property**:
+
+```verilog
+wire       changed = gray ^ old_gray;      // 1 bit, wanted 4
+assert((changed & (changed - 1)) == 0);    // "exactly one bit changed"
+```
+
+`changed` holds bit 0 and nothing else, so the assertion is true of both
+values it can hold. It **can never fail** — against any design, ever. Every
+task still runs, the broken designs it was meant to catch sail through,
+and nothing in a verdict distinguishes that from a property that is
+genuinely satisfied. In a design a width bug misbehaves; in a property
+file it goes quiet.
+
+It also promotes a warning yosys does not treat as fatal:
+
+```verilog
+old_grey <= grey;      // neither name declared; yosys invents both
+```
+
+`` `default_nettype none `` is supposed to make that a compile error. It
+does not — yosys warns and carries on, leaving the real `old_gray` never
+assigned while the line appears to update it.
+
+`make lint-selftest` checks the lint still catches what it claims, using
+the fixtures in `mk/lint-selftest/` — one file per bug, plus one with
+nothing wrong. A lint that has quietly stopped working reports "clean",
+which is also what it says when your file is fine.
 
 **Read the specification first.** Every exercise's `props.v` opens with a
 numbered `THE SPECIFICATION` block — the contract, stated before any hints
@@ -144,9 +187,10 @@ Your property set is finished when every verdict matches — passing the
 correct design **and failing every broken one**. `fail as expected` is
 good news.
 
-There are top-level versions: `make` runs the harness self-test and then
-every exercise; `make solutions` does the same against the references;
-`make selftest` is just the self-test.
+There are top-level versions: `make` runs the harness self-test, every
+exercise, then the lint; `make solutions` and `make lint-solutions` do the
+same against the references; `make selftest` and `make lint-selftest` are
+the two self-tests on their own.
 
 **On a fresh clone, `make` at the top level reports mostly FAIL.** That is
 correct. The property files are stubs, so the broken designs pass, and
@@ -498,6 +542,9 @@ mk/run.sh            run tasks, compare verdicts, explain the wrong ones
 mk/trace.py          render a counterexample as a table
 mk/selftest.sh       prove the runner still works
 mk/selftest/         fixtures, one per verdict
+mk/lint.sh           what the Verilog says, not what the verdicts say
+mk/lint-*.py         the checks yosys and verilator do not do
+mk/lint-selftest/    fixtures, one per bug the lint claims to catch
 exercises/NN-*/      design(s) + property stub + harness + prove.sby
 solutions/NN-*/      reference property sets
 ```

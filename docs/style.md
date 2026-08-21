@@ -93,6 +93,20 @@ typo'd signal name becoming a silent 1-bit wire is bad in a design and
 worse in a property, where the result is a proof about something you did
 not write.
 
+**And it is not sufficient**, which was found the hard way. yosys does
+*not* treat an undeclared name as an error under `default_nettype none` —
+it warns and invents the wire anyway:
+
+```
+props.v:205: Warning: Identifier `\grey' is implicitly declared.
+```
+
+A reader lost an afternoon to `old_grey <= grey;` on that basis: both
+names invented, the real `old_gray` never assigned, and every property
+reading it quietly testing the wrong thing. `make lint` promotes that
+warning to a failure, because the directive alone does not close the hole
+it is there to close.
+
 ## Property files
 
 ### Every exercise states its contract first
@@ -235,6 +249,19 @@ build.
 This is not hypothetical. It is what the first version did, and it went
 unnoticed for several exercises because the output looked like progress.
 
+### The lint self-tests too
+
+`make lint-selftest` runs `mk/lint.sh` over one fixture per bug it claims
+to catch, plus one with nothing wrong, and requires all seven verdicts.
+Disabling the width check makes it report exactly which two fixtures it
+stopped catching.
+
+The narrowing check earns its place more here than it did in the Wishbone
+repo. There, a width bug makes hardware misbehave and something
+eventually notices. In a property file it makes an assertion *weaker* —
+and a weaker assertion does not fail, it passes, along with every broken
+design it was pointed at.
+
 ### The harness self-tests before it judges you
 
 `mk/selftest.sh` checks that `mk/run.sh` still tells `pass`, `fail`,
@@ -278,6 +305,7 @@ If a comment in this repo states a number or a consequence, it was run.
 | yosys | 0.68 (yowasp) |
 | SymbiYosys | as shipped with the above |
 | z3 | 5.1.0 (`pip install z3-solver`) |
+| verilator | 5.020 (`make lint` only) |
 
 Any SMT solver SymbiYosys supports will do — boolector and yices are both
 faster than z3 on this kind of problem. See the README for installation,
