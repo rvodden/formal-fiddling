@@ -56,8 +56,8 @@ solutions: selftest
 	exit $$fail
 
 selftest:
-	@$(ROOT_SELFTEST)mk/selftest.sh "$(SBY)"
+	@mk/selftest.sh "$(SBY)"
 
 clean:
 	@for e in $(EXERCISES); do $(MAKE) -s -C exercises/$$e clean; done
-	@rm -rf mk/selftest/probe_*
+	@rm -rf mk/selftest/probe mk/selftest/probe_*

@@ -1,6 +1,11 @@
-# SymbiYosys working directories. Each task gets one, named for the .sby
-# file and the task: prove_good/, prove_bad1/, and so on.
+# SymbiYosys working directories.
+#
+# Each task gets one named for the .sby file and the task -- prove_good/,
+# prove_bad1/ -- and sby also keeps a shared status database in a bare
+# directory named for the .sby file alone.
+prove/
 prove_*/
+probe/
 probe_*/
 
 # The scratch copy `make solution' builds, with the reference property
