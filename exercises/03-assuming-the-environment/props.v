@@ -263,7 +263,38 @@ module props (
     // that can be pushed and where it stops.
     // ------------------------------------------------------------------
 
-    always @(posedge clk) if ( f_past_valid && !rst && !$past(rst))
+    // Clause 4 - `ack` is never high unless `req` is.
+    always @(*) if(ack) assert(req);
+
+    // Clause 5 - `ack` is never high on the clock after a reset
+    always @(posedge clk) if($past(rst)) assert(!ack);
+
+    // Clause 6 - One request draws exactly one ack: it is high for one clock.
+    reg req_recieved = 1'b0;
+    always @(posedge clk) begin
+        if (req) req_recieved <= 1'b1;
+        if (ack) req_recieved <= 1'b0;
+    end
+
+    always @(posedge clk) if ( f_past_valid && !rst && !$past(rst)) begin
+        if (ack)        assert(req_recieved);
+        if ($past(ack)) assert(~ack);
+    end
+
+    // Clause 7 - ack arrives EXACTLY latency(addr) clocks after req appears.
+    integer counter = 0;
+    always @(posedge clk) begin
+        if (req_recieved) counter <= counter + 1;
+    end
+    
+    always @(posedge clk) if ( f_past_valid && !rst && !$past(rst)) begin
+        if (ack) assert (counter == { {29{1'b0}}, addr });
+    end
+
+    // Clause 8 - ack arrives at all, within 4 clocks -- 4 being the slowest
+    //      address the map allows.
+    always @(*) assert (counter < 4);
+
 
     // ------------------------------------------------------------------
     // TODO -- COVER statements. Last.
