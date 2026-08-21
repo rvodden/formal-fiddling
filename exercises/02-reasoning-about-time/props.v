@@ -197,6 +197,8 @@ module props (
     initial assume(rst);
 
     reg f_past_valid = 1'b0;
+    reg [15:0] values = 16'b0;
+    
     always @(posedge clk) f_past_valid <= 1'b1;
 
     // ------------------------------------------------------------------
@@ -256,6 +258,60 @@ module props (
     // pointed at your own bookkeeping instead of at an assumption.
     // ------------------------------------------------------------------
 
+    reg [3:0] counter = 4'b0;
+    reg [3:0] old_gray = 4'b0;
+
+    wire [3:0] gray_change = gray ^ old_gray;
+
+    always @(posedge clk) begin
+        if (rst) begin
+            values   <= 16'b0;
+            counter  <= 4'b0;
+            old_gray <= 4'b0;
+        end else if(inc) begin
+            values[gray] <= 1'b1;
+            counter      <= counter + 1;
+            old_gray     <= gray;
+
+            if (counter == 0) values <= 16'h1; // gray is currently 0 so lsb is set;
+        end
+    end
+
+    always @(posedge clk) if( f_past_valid && !rst && $past(!rst) ) begin
+
+        // Clause 1: coming out of reset, the counter reads zero
+        if ($past(rst))  assert (gray == 0);
+        
+        // Clause 2: while `inc` is low, the value does not change
+        if (~$past(inc)) assert (gray == $past(gray));
+
+        // 
+        if ($past(inc)) begin
+            // clause 3: while inc is high, exactly one bit changes
+            assert ( gray != $past(gray) );                   // gray has changed
+            assert ( (gray_change & (gray_change - 1 )) == 0 ); // by exactly one bit
+
+            // clause 4: it does not return to zero early. Count the increments since reset, modulo 16
+            if ((counter == 0) && ($past(counter) != 0)) begin
+                // Clause 4: Sixteen increments bring it back to 0 - see (*) below
+                assert (gray == 0); 
+                // Clause 4: It visits all sixteen values before repeating.
+                assert (values == 16'hFFFF);
+            end
+            // Clause 4: (*) and no fewer do.
+            else assert (gray != 0);
+        end
+    end
+
+    always @(*) begin
+        cover(inc);
+        cover(~inc);
+    end
+
+    always @(posedge clk) if ( f_past_valid && !rst && $past(!rst) ) begin
+        cover (gray == 4'b0 && $past(gray) != 4'b0);
+        cover ((counter == 0) && ($past(counter) != 0));
+    end
 endmodule
 
 `default_nettype wire
