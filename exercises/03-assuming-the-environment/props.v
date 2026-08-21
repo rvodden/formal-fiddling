@@ -263,6 +263,7 @@ module props (
     // that can be pushed and where it stops.
     // ------------------------------------------------------------------
 
+    always @(posedge clk) if ( f_past_valid && !rst && !$past(rst))
 
     // ------------------------------------------------------------------
     // TODO -- COVER statements. Last.
