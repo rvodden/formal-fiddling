@@ -27,6 +27,24 @@
 // testbench walks straight past.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// A saturating counter, LIMIT = 10.
+//
+//   1. After reset, count reads 0.
+//   2. On a clock where inc is low, count is unchanged.
+//   3. On a clock where inc is high and count is below LIMIT, count
+//      increases by one.
+//   4. count never exceeds LIMIT.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// Clause 4 is the whole of what "saturating" means, and it is the only
+// clause this exercise asserts. The counter as shipped breaks clauses 3
+// and 4 together: it keeps counting past LIMIT, round to 15, and wraps.
+//
+// ---------------------------------------------------------------------
 // WHAT THE FIVE TASKS DO
 //
 //   make buggy          FAIL -- the counter as shipped sails past LIMIT

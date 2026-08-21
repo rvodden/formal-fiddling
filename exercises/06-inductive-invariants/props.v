@@ -80,6 +80,32 @@
 // how a module works, in a form that cannot rot.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// The pointer arithmetic of an eight-deep FIFO. DEPTH = 8.
+//
+//   1. After reset, both pointers and count are 0.
+//   2. A push when not full advances wptr and increments count; a pop
+//      when not empty advances rptr and decrements count.
+//   3. empty is high exactly when the pointers are equal; full exactly
+//      when they differ only in their top bit.
+//   4. count never exceeds DEPTH.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// Clause 4 is the only one this exercise asserts, and the design meets
+// it. Everything here is correct; there is no bug to find.
+//
+// Note what the specification does NOT say: anything about `count' and
+// the pointers agreeing. That is true of the design, it follows from
+// clauses 1 and 2, and it is not part of the contract -- nobody outside
+// the module can tell the difference. Which is exactly why you will end
+// up writing it down anyway. A specification says what must be
+// observably true; an INVARIANT is a further fact you state because a
+// proof needs it. Discovering which one clause 4 needs is the exercise.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make bmc            PASS     -- bounded, as in every exercise so far

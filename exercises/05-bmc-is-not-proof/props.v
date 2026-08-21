@@ -27,6 +27,31 @@
 // has not barked looks exactly like a watchdog that has not needed to.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// A watchdog timer, TIMEOUT = 40.
+//
+//   1. After reset, bark is low.
+//   2. A kick, or a reset, restarts the count of quiet clocks.
+//   3. If TIMEOUT quiet clocks go by, bark is asserted -- no later than
+//      TIMEOUT + 1 clocks after the last kick or reset.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// The bound in clause 3 is TIMEOUT + 1 rather than TIMEOUT because the
+// design's bark is registered: it decides on the clock the count reaches
+// TIMEOUT and the output appears on the next one. One clock too tight
+// and a correct watchdog fails; one too loose and a watchdog that barks
+// late passes. Derive it from the specification rather than adjusting
+// until the good case goes green -- that is fitting the property to the
+// implementation.
+//
+// The design never barks at all, so it breaks clause 3 outright. The
+// exercise is not about finding that. It is about the depth at which you
+// are told.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 // Write a property set so that:

@@ -1,9 +1,9 @@
 // Reference solution for exercise 02 -- properties for a Gray counter.
 //
-// Three assertions and three cover statements. The three assertions split
-// the specification into "what it does when told to hold", "what it does
-// when told to advance", and "where it starts", and between them they
-// leave a wrong implementation nowhere to go.
+// Four assertions and three cover statements, one assertion per clause of
+// the specification. Between them they leave a wrong implementation
+// nowhere to go -- and it takes all four: each of the four broken designs
+// in dut/ is caught by a different one.
 
 `default_nettype none
 
@@ -66,6 +66,35 @@ module props (
     always @(posedge clk)
         if (f_past_valid && !rst && !$past(rst) && $past(inc))
             assert(changed != 4'd0 && (changed & (changed - 4'd1)) == 4'd0);
+
+    // P4. It does not come back to zero early -- clause 4, the one that
+    //     makes it a counter rather than merely a Gray code.
+    //
+    //     f_inc counts increments since reset, modulo 16, so it IS the
+    //     value the counter is supposed to be showing (in binary). The
+    //     counter reads zero exactly when f_inc does, and at no other
+    //     time. Written as an equality in both directions, because
+    //     "returns to zero no earlier than the sixteenth increment" and
+    //     "does return to zero on the sixteenth" are both wanted and one
+    //     line covers them.
+    //
+    //     This is what catches bad4, whose four-state cycle is back at
+    //     zero after four increments, and incidentally bad2, whose skip
+    //     shortens the cycle to fifteen. Nothing in P1..P3 can see
+    //     either: every step both of them take is a legal one-bit Gray
+    //     step.
+    //
+    //     Note it does NOT subsume P3. bad1 -- a plain binary counter --
+    //     satisfies P4 perfectly, since it too is at zero exactly every
+    //     sixteen increments. The two clauses are independent in both
+    //     directions, which is why the specification states both.
+    reg [3:0] f_inc;
+    always @(posedge clk)
+        if (rst)      f_inc <= 4'd0;
+        else if (inc) f_inc <= f_inc + 4'd1;
+
+    always @(*)
+        if (f_past_valid && !rst) assert((gray == 4'd0) == (f_inc == 4'd0));
 
     // ------------------------------------------------------------------
     // Note what is NOT here: any assumption about `inc'. It is a free

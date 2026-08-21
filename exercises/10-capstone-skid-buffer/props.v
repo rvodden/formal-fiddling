@@ -31,25 +31,46 @@
 // in every design that has backpressure at all.
 //
 // ---------------------------------------------------------------------
-// THE CONTRACT, BOTH WAYS
+// THE SPECIFICATION
 //
-// A valid/ready stream has three rules and they apply to each end:
+// A skid buffer in a valid/ready stream. MAX_WAIT = 2.
 //
-//   1. A beat transfers on any clock where valid and ready are both high.
-//   2. valid, once raised, stays raised until a transfer happens. An
-//      offer may not be withdrawn.
-//   3. data does not change while valid is high and ready is not. The
-//      offer on the table is a specific beat.
+// The STREAM CONTRACT, which has three rules and applies to each end:
 //
-// Note that ready has no such obligation. A sink may raise and drop ready
+//   R1. A beat transfers on any clock where valid and ready are both
+//       high.
+//   R2. valid, once raised, stays raised until a transfer happens. An
+//       offer may not be withdrawn.
+//   R3. data does not change while valid is high and ready is not. The
+//       offer on the table is a specific beat.
+//
+// Note ready carries no such obligation. A sink may raise and drop it
 // however it likes, and a source may not wait for ready before asserting
-// valid -- that is a deadlock, and it is the reason rule 2 exists.
+// valid -- that is a deadlock, and it is the reason R2 exists.
 //
-// Your property set ASSUMES rules 2 and 3 of the upstream, and ASSERTS
-// them of the downstream. Same three sentences, twice, pointing in
-// opposite directions. That is what a component in the middle of a stream
-// owes, and it is the shape of every interface verification you will
-// ever write.
+// What this module owes:
+//
+//   1. R2 and R3 hold of its downstream port. (You ASSUME them of the
+//      upstream and ASSERT them of the downstream: the same two
+//      sentences, twice, pointing in opposite directions. That is the
+//      whole obligation of a component in the middle of a stream, and
+//      the shape of every interface proof you will ever write.)
+//   2. Nothing is offered downstream on the clock after reset.
+//   3. Every beat accepted upstream is delivered downstream exactly
+//      once, unchanged, in order.
+//   4. At most two beats are inside the module at any moment -- it has
+//      two registers.
+//   5. While the sink holds ready, a beat being offered is taken within
+//      MAX_WAIT clocks.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// The three broken designs are chosen so that no single clause catches
+// two of them: bad1 loses beats (clause 3), bad2 invents them (clause 3
+// again, but only its counting half), and bad3 breaks clause 1 while
+// losing and inventing nothing at all. Clause 5 is there so that a module
+// which simply never passes anything on cannot satisfy the rest.
 //
 // ---------------------------------------------------------------------
 // WHAT TO DO

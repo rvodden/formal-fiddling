@@ -69,6 +69,41 @@
 // So: the fewest assumptions that make `good' pass. Not one more.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// A request/acknowledge slave whose latency depends on the address.
+// Write latency(addr) for addr[1:0] + 1, so 1, 2, 3 or 4 clocks.
+//
+// What a legal MASTER promises -- these are yours to `assume':
+//
+//   1. No request is outstanding while rst is high.
+//   2. Once req is raised it stays raised until ack comes back.
+//   3. addr does not change while a request is in flight.
+//
+// What the SLAVE owes -- these are yours to `assert':
+//
+//   4. ack is never high unless req is.
+//   5. ack is never high on the clock after reset.
+//   6. One request draws exactly one ack: it is high for one clock.
+//   7. ack arrives EXACTLY latency(addr) clocks after req appears.
+//   8. ack arrives at all, within 4 clocks -- 4 being the slowest
+//      address the map allows.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// Clauses 7 and 8 look like one clause and are two, which is the trap in
+// this exercise. Every word of 7 is conditional on the acknowledge
+// arriving; a slave that never answers satisfies 4, 5, 6 and 7 together
+// and is a brick. Only 8 sees it. That is the difference between a
+// SAFETY property -- nothing bad happens -- and a bounded LIVENESS one.
+//
+// Clause 3 is what makes clause 7 well defined at all: `latency' is read
+// from an address, and an address that moves mid-transaction leaves
+// nothing for clause 7 to be about. It is also why the correct slave
+// FAILS until you have written the assumptions.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- the correct slave, once you have assumed

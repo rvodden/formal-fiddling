@@ -78,6 +78,32 @@
 // in exercise 04.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// A four-deep FIFO with storage, first-word-fall-through.
+//
+//   1. After reset, the FIFO is empty.
+//   2. A push when not full accepts wdata; a pop when not empty removes
+//      the oldest entry.
+//   3. rdata always shows the oldest unread entry while the FIFO is not
+//      empty -- there is no read latency.
+//   4. Every value pushed comes out unchanged, exactly once, in the
+//      order it went in.
+//   5. The FIFO never delivers more entries than were put into it.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// Clauses 1 to 3 are about CONTROL and clauses 4 and 5 are about DATA,
+// and all three broken FIFOs in dut/ satisfy the control clauses
+// perfectly. A property set from any earlier exercise passes all three.
+//
+// Clauses 4 and 5 are also independent of each other: a FIFO whose read
+// pointer never advances hands out a correct value at every position it
+// is asked about, for as long as it has entries to be right about, and
+// only clause 5 notices that it never runs out.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- a correct FIFO

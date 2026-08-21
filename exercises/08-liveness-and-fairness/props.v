@@ -121,6 +121,41 @@
 // will happily accommodate a bug.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// A two-master arbiter. A grant lasts one clock; then it arbitrates
+// again. MAX_WAIT = 3.
+//
+// What a master promises -- assumed:
+//
+//   1. Nothing is requested while rst is high.
+//   2. A master that has asked and not been granted is still asking on
+//      the next clock. It may ask for ever.
+//
+// What the arbiter owes -- asserted:
+//
+//   3. Never grant two masters on the same clock.
+//   4. Never grant a master that was not asking on the previous clock.
+//      (The grant is registered, so it answers the previous clock's
+//      request. Compare against $past(req), or the correct design fails.)
+//   5. No grants on the clock after reset.
+//   6. A master that keeps asking is granted within MAX_WAIT clocks.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// Clauses 3 to 5 are SAFETY -- nothing bad happens -- and clause 6 is
+// LIVENESS. You need both, and the two broken arbiters are chosen to
+// prove it: strict priority satisfies 3, 4 and 5 impeccably for ever
+// while master 1 starves, and an arbiter that grants everybody makes
+// nobody wait at all.
+//
+// Clause 2 says "it may ask for ever" on purpose. That is the behaviour
+// which starves master 1 under strict priority, and a fairness
+// assumption that quietly excludes it -- "a master gives up after N
+// clocks" -- makes every policy fair and every result here worthless.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- round robin, one-clock grants

@@ -54,6 +54,33 @@
 // same function, which is a weaker and much less useful claim.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// There is no prose specification here, and that is the point of the
+// exercise: popcount_ref.v IS the specification, written in Verilog.
+// It counts the set bits of an 8-bit word by adding them up, and it is
+// correct because you can read it in one go and see that it is.
+//
+// What the optimised version owes:
+//
+//   1. On every clock, its output equals the reference's output for the
+//      input of the PREVIOUS clock. Latency exactly one -- not "at most
+//      one", not "some fixed amount".
+//   2. Coming out of reset its pipeline holds zero, which is the answer
+//      to no input at all, so clause 1 does not apply to that clock.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// Clause 1 says "exactly" for a reason. dut/bad2_wrong_latency.v produces
+// a correct population count of something it was given, always -- its
+// arithmetic is flawless and it is one clock late. Feed both versions
+// the same stream and the multisets of outputs agree perfectly. A
+// property set that does not pin the latency down is not checking
+// equivalence; it is checking that two modules compute the same
+// function, which is a weaker and much less useful claim.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- the pipelined tree, correct

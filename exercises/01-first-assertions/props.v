@@ -44,6 +44,25 @@
 // is the thing that will bite you.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// An 8-bit priority encoder. Purely combinational -- no clock, no state.
+//
+//   1. vld is high exactly when at least one bit of req is set.
+//   2. When vld is high, idx names the LOWEST set bit of req: req[idx]
+//      is set, and no bit below idx is set.
+//   3. When vld is low, idx means nothing and may be anything.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// Clause 2 has two halves and they are not the same claim. "req[idx] is
+// set" says the answer is plausible; "no bit below idx is set" is the
+// only part that says anything about PRIORITY. An encoder returning the
+// highest set bit satisfies the first half perfectly -- that is
+// dut/bad1_highest.v, and it is what most first attempts let through.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- a correct encoder

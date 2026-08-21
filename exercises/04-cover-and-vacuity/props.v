@@ -61,6 +61,33 @@
 // an assumption you are trusting rather than checking.
 //
 // ---------------------------------------------------------------------
+// THE SPECIFICATION
+//
+// The occupancy counter of a four-deep FIFO. DEPTH = 4.
+//
+// What a polite producer and consumer promise -- assumed, and given:
+//
+//   1. Nothing is pushed while full is high.
+//   2. Nothing is popped while empty is high.
+//
+// What the counter owes -- asserted:
+//
+//   3. After reset, count is 0.
+//   4. A push with room increments count; a pop with contents decrements
+//      it; both on one clock, or neither, leave it alone.
+//   5. empty is high exactly when count is 0.
+//   6. full is high exactly when count is DEPTH.
+//   7. count never exceeds DEPTH.
+//
+// This block is the contract. Everything else in this file is commentary
+// and hints; where they disagree, this is what binds.
+//
+// The design breaks clause 6 -- it flags full one entry late -- and the
+// consequence is a breach of clause 7. Clause 7 is the assertion this
+// exercise ships, it is aimed straight at the bug, and it passes anyway.
+// Working out why is the exercise.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 // Write cover statements at the bottom of this file so that:

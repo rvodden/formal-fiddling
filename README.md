@@ -110,6 +110,12 @@ make clean
 why. `make solution` should always pass — if it does not, the harness is
 broken, not you.
 
+**Read the specification first.** Every exercise's `props.v` opens with a
+numbered `THE SPECIFICATION` block — the contract, stated before any hints
+about how to write it. Where the block and the surrounding commentary
+disagree, the block binds. It is the thing to argue with when you are
+deciding whether some design in `dut/` ought to fail.
+
 **What those tasks are.** `good`, `bad1`, `cover` and the rest are defined
 in the exercise's `prove.sby`, and they mostly run *the same files*. Two
 things vary: which design is read — every design in a `dut/` directory
@@ -163,7 +169,7 @@ counterexample rather than finding one.
 |---|---|---|---|
 | 00 | worked example | — read this one, do not write it | `assert`/`assume`/`cover`, and vacuity |
 | 01 | first assertions | asserting the answer is *plausible* | exhaustive combinational proof |
-| 02 | reasoning about time | "every transition is legal" is half a spec | `$past`, `f_past_valid` |
+| 02 | reasoning about time | "every transition is legal" is a third of a spec | `$past`, `f_past_valid` |
 | 03 | assuming the environment | the correct design fails | `assume`, safety vs liveness |
 | 04 | cover and vacuity | a hollow proof, and how to catch one | `cover` as an alarm |
 | 05 | BMC is not proof | the bug past the horizon | depth, and what PASS means |
@@ -228,11 +234,19 @@ is plausible rather than that it is the answer.
 A 4-bit Gray counter. Exactly one bit changes per step, which is why Gray
 codes are what you put across a clock domain crossing.
 
-**Watch for:** `bad3` is free-running — it advances when told to hold.
-Every transition it makes is a perfectly legal Gray step, so a property
-set saying only what the transitions look like passes it. "One bit changes
-at a time" feels like the definition of a Gray counter and it is half of
-it.
+**Watch for:** two of the four broken designs make nothing but legal Gray
+steps, and no property about transitions can see either.
+
+`bad3` is free-running — it advances when told to hold. `bad4` cycles
+`0000 → 0001 → 0011 → 0010 → 0000` for ever: one bit changes on every step
+including the wrap, it holds when told to, it resets to zero, and it
+cannot count past three.
+
+"One bit changes at a time" feels like the definition of a Gray counter.
+It is a third of it. You also have to say when it may move, and that it
+goes all the way round — which is why the exercise opens with a numbered
+specification and why clauses 3 and 4 are independent in both directions:
+`bad1` breaks 3 and satisfies 4, `bad4` the reverse.
 
 ### 03 — assuming the environment
 

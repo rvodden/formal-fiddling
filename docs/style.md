@@ -95,6 +95,23 @@ not write.
 
 ## Property files
 
+### Every exercise states its contract first
+
+`props.v` opens with a numbered `THE SPECIFICATION` block, before any
+prose about technique and before any hints, and it says in as many words
+that it is what binds.
+
+This is not decoration. Exercise 02 shipped without one: its contract was
+a sentence in the file header that never mentioned the enable, a bullet
+list explicitly marked *"you do not need all of them"*, and one precise
+sentence buried in `dut/good.v` — the one file a student writing
+properties has least business reading. A reader asked whether a
+particular broken design was even out of scope, and the honest answer was
+that the exercise could not say. That is a bug in an exercise whose whole
+subject is stating things precisely.
+
+A clause you cannot point at is a clause you cannot hold anybody to.
+
 ### Structure
 
 In this order, with a banner comment between sections:
