@@ -42,7 +42,8 @@ harness rather than believed.
 
 Read [`docs/formal-crib-sheet.md`](docs/formal-crib-sheet.md) once, then
 come back to it whenever a run says something you did not expect. Section
-12 is a symptom-to-cause table for exactly that.
+2 explains what the tasks in an exercise actually are, and section 13 is a
+symptom-to-cause table.
 
 [`docs/style.md`](docs/style.md) is the coding style — Verilog-2001,
 lowRISC conventions, and the conventions specific to property files.
@@ -108,6 +109,34 @@ make clean
 `make` fails loudly with a list of which tasks gave the wrong verdict and
 why. `make solution` should always pass — if it does not, the harness is
 broken, not you.
+
+**What those tasks are.** `good`, `bad1`, `cover` and the rest are defined
+in the exercise's `prove.sby`, and they mostly run *the same files*. Two
+things vary: which design is read — every design in a `dut/` directory
+declares the same module name, so swapping one for another is one line —
+and which **mode** sby runs in.
+
+| mode | the solver hunts for | it ignores |
+|---|---|---|
+| `bmc` | a trace that **breaks** an `assert` | your `cover` statements |
+| `cover` | a trace that **reaches** each `cover` | your `assert` statements |
+| `prove` | both halves of an induction proof | your `cover` statements |
+
+So `make cover` is not a second opinion on your assertions — in that mode
+they are not checked at all. It asks the opposite question, and an
+unreachable cover statement is an alarm rather than a success. That is
+what exercises 04 and 05 are about, and
+[§2 of the crib sheet](docs/formal-crib-sheet.md) has the longer version.
+
+The exercise's `Makefile` says what verdict each task *should* give:
+
+```make
+TASKS := good:pass bad1:fail bad2:fail bad3:fail cover:pass
+```
+
+Your property set is finished when every verdict matches — passing the
+correct design **and failing every broken one**. `fail as expected` is
+good news.
 
 There are top-level versions: `make` runs the harness self-test and then
 every exercise; `make solutions` does the same against the references;

@@ -12,14 +12,88 @@ its surroundings are allowed to do, as `assume` statements. A solver then
 searches — not samples, searches — for an input sequence that breaks an
 assertion while respecting every assumption. If it finds one you get a
 counterexample trace. If it does not, you have a proof, and the fine
-print on the word "proof" is section 5.
+print on the word "proof" is section 6.
 
 The whole discipline is three statements, and confusing two of them is
 most of what goes wrong.
 
 ---
 
-## 2. The three statements
+## 2. What a task actually is
+
+Every exercise runs several **tasks** — `make good`, `make bad1`,
+`make cover`. They are listed in that exercise's `prove.sby`, and the
+thing to understand first is that they mostly **run the same files**.
+What changes is the question being asked.
+
+Here is `exercises/01-first-assertions/prove.sby`, with two of its five
+tasks and all of its comments left out:
+
+```
+[options]
+good:  mode bmc          <- can any assert() be broken?
+bad1:  mode bmc
+cover: mode cover        <- can every cover() be reached?
+
+[script]
+good:  read -formal good.v
+bad1:  read -formal bad1_highest.v
+cover: read -formal good.v
+read -formal props.v     <- YOUR properties, in every task
+```
+
+Two knobs do all the work:
+
+- **which design is read.** Every design in a `dut/` directory declares
+  the *same module name*, so swapping a correct one for a broken one is a
+  single line and the harness never changes.
+- **which mode.** This is the one that surprises people.
+
+| mode | the solver hunts for | it ignores | PASS | FAIL |
+|---|---|---|---|---|
+| `bmc` | a trace that **breaks** an `assert` | your `cover` statements | no counterexample found | here is one |
+| `cover` | a trace that **reaches** each `cover` | your `assert` statements | every one was reachable | one was not |
+| `prove` | both halves of an induction proof | your `cover` statements | proved for all time | see §6 |
+
+So **`make cover` is not a second opinion on your assertions.** In
+`mode cover` the assertions are not checked at all, and in `mode bmc` the
+cover statements are not. They are different questions about one file,
+and you need both answers — section 7 is about why.
+
+"Ignores" is meant literally, and it was checked rather than assumed. Give
+a design an assertion that is false from step 1, and a cover statement
+aimed at a state where it is false: `mode bmc` returns FAIL, and `mode
+cover` returns PASS having reached that state. The assertions are not
+checked, and they do not constrain the search either. A broken assertion
+has no effect whatever on a cover run.
+
+### FAIL is frequently the right answer
+
+Each exercise's `Makefile` says what verdict every task *should* produce:
+
+```make
+TASKS := good:pass bad1:fail bad2:fail bad3:fail cover:pass
+```
+
+A bare `make` runs them all and compares. Your property set is finished
+when every verdict matches — which means passing the correct design **and
+failing every broken one**. A task printing `fail as expected` is good
+news.
+
+This is also why `ERROR` is a verdict of its own and never satisfies
+anything. Most tasks here are meant to fail, so a property file with a
+typo in it would otherwise go green nearly everywhere.
+
+### Running one at a time
+
+`make good` runs that single task and shows sby's own output, which is
+what you want while actually working. `make trace TASK=bad1` prints its
+counterexample as a table. A task that PASSED has no counterexample, so
+there is nothing for `trace` to show.
+
+---
+
+## 3. The three statements
 
 | | asks | silence means | who it constrains |
 |---|---|---|---|
@@ -49,7 +123,7 @@ makes it easy.**
 
 ---
 
-## 3. Reading a counterexample
+## 4. Reading a counterexample
 
 Every counterexample is one of two things and you must decide which,
 every time:
@@ -65,7 +139,7 @@ progress, and proves nothing.
 first:
 
 - **step 0.** Is `rst` high? If not, you are reading an induction trace
-  (section 5) and step 0 is allowed to be nonsense.
+  (section 6) and step 0 is allowed to be nonsense.
 - **the marked step.** That is where the assertion failed. What changed
   on the step before it?
 - **the inputs.** Did the environment do something a real one never
@@ -73,7 +147,7 @@ first:
 
 ---
 
-## 4. The boilerplate, and why
+## 5. The boilerplate, and why
 
 Every property file here starts with two things:
 
@@ -116,7 +190,7 @@ and an expression does not.
 
 ---
 
-## 5. `mode bmc` versus `mode prove`
+## 6. `mode bmc` versus `mode prove`
 
 ### bmc — bounded model checking
 
@@ -185,7 +259,7 @@ proves things a 16-bit one does not.
 
 ---
 
-## 6. Vacuity: the failure mode
+## 7. Vacuity: the failure mode
 
 Assume too much and the solver never builds the trace that would expose
 the bug. **There is no diagnostic.** It says PASS, in the same words it
@@ -222,7 +296,7 @@ guarding the assumptions.
 
 ---
 
-## 7. Safety and liveness
+## 8. Safety and liveness
 
 **Safety**: nothing bad happens. These come to mind unprompted.
 
@@ -267,11 +341,11 @@ implementation, and it will accommodate a bug just as happily.
 "A master that keeps asking is granted within N" is not well formed until
 you say what "keeps asking" means. The assumption is part of the property,
 and it is the easiest place in all of formal verification to
-over-constrain — see section 6.
+over-constrain — see section 7.
 
 ---
 
-## 8. Abstraction with `$anyconst`
+## 9. Abstraction with `$anyconst`
 
 To prove something about every item, prove it about one arbitrary item.
 
@@ -302,7 +376,7 @@ The solver chooses both, so any counterexample that existed still exists.
 Nothing was removed; something was renamed.
 
 Fix `f_value` at `8'hA5` instead and you have deleted 255 values out of
-256, and you are back in section 6.
+256, and you are back in section 7.
 
 Always cover that the tracked item was pushed **and** popped. The
 assertion lives inside a condition the solver controls, and if it never
@@ -310,7 +384,7 @@ holds, the run passes having checked nothing.
 
 ---
 
-## 9. Equivalence checking
+## 10. Equivalence checking
 
 Two designs, one stimulus, one assertion that the outputs agree. The
 arrangement is called a **miter** and there is no special mode or tool.
@@ -343,7 +417,7 @@ assume the contract, and you have proved equivalence only where it holds.
 
 ---
 
-## 10. Free inputs, and white-box observation
+## 11. Free inputs, and white-box observation
 
 An undriven input at the top of the harness is one the solver may set to
 anything on every step. That is the exhaustive stimulus, and it is why
@@ -367,7 +441,7 @@ Often you need less than you think: in a skid buffer, `m_valid` and
 
 ---
 
-## 11. Counters in property files
+## 12. Counters in property files
 
 Two rules, both learned the hard way.
 
@@ -384,23 +458,23 @@ wrap, because modular subtraction is what you meant.
 
 ---
 
-## 12. Symptoms and causes
+## 13. Symptoms and causes
 
 | symptom | likely cause |
 |---|---|
-| correct design FAILs | missing assumption — the environment did something illegal (§3) |
-| FAIL on step 1, `rst` high at step 0 | missing `!$past(rst)` in the guard (§4) |
-| everything passes, including the broken DUTs | no assertion actually fires; check cover (§6) |
-| `mode prove` says UNKNOWN | property is true but not inductive — strengthen (§5) |
-| induction trace starts in an impossible state | that *is* the answer; assert it cannot happen (§5) |
-| a cover statement is unreachable | over-constraint, or depth too shallow (§6) |
-| `\$past is only allowed in clocked blocks` | move it inside `always @(posedge clk)` (§4) |
+| correct design FAILs | missing assumption — the environment did something illegal (§4) |
+| FAIL on step 1, `rst` high at step 0 | missing `!$past(rst)` in the guard (§5) |
+| everything passes, including the broken DUTs | no assertion actually fires; check cover (§7) |
+| `mode prove` says UNKNOWN | property is true but not inductive — strengthen (§6) |
+| induction trace starts in an impossible state | that *is* the answer; assert it cannot happen (§6) |
+| a cover statement is unreachable | over-constraint, or depth too shallow (§7) |
+| `\$past is only allowed in clocked blocks` | move it inside `always @(posedge clk)` (§5) |
 | task "fails" but nothing was checked | it did not compile — the harness reports ERROR separately |
 | proof is slow | reduce depth, narrow the data, or find an invariant so induction closes |
 
 ---
 
-## 13. Further reading
+## 14. Further reading
 
 - **[SymbiYosys documentation](https://symbiyosys.readthedocs.io/)** —
   the tool. Modes, engines, and the `.sby` file format.
