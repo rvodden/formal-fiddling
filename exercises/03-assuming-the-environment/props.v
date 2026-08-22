@@ -262,40 +262,41 @@ module props (
     // model checker can actually settle. Exercise 08 is about how far
     // that can be pushed and where it stops.
     // ------------------------------------------------------------------
-    reg req_recieved = 1'b0;
+    reg f_req_received = 1'b0;
     always @(posedge clk) begin
-        if (req) req_recieved <= 1'b1;
-        if (ack) req_recieved <= 1'b0;
+        if (req) f_req_received <= 1'b1;
+        if (ack) f_req_received <= 1'b0;
     end
 
     always @(posedge clk) if ( f_past_valid && !rst && !$past(rst)) begin
         // Clause 4 - `ack` is never high unless `req` is.
         if(ack) assert(req);
 
-        // Clause 5 - `ack` is never high on the clock after a reset
-        if($past(rst)) assert(!ack);
-
         // Clause 6 - One request draws exactly one ack: it is high for one clock.
-        if (ack)        assert(req_recieved);
-        if ($past(ack)) assert(~ack);
+        if (ack)        assert(f_req_received);
+        if ($past(ack)) assert(!ack);
 
         // Clause 7 - ack arrives EXACTLY latency(addr) clocks after req appears.
         if (ack) assert (f_outstanding == {1'b0, latency});
 
         // Clause 8 - ack arrives at all, within 4 clocks -- 4 being the slowest
         // address the map allows.
-        assert (f_outstanding <= 4);
+        assert (f_outstanding <= 4'h4);
     end
+
+    always @(posedge clk) if(!rst)
+        // Clause 5 - `ack` is never high on the clock after a reset
+        if($past(rst)) assert(!ack);
 
     // assumptions
     // Clause 1: No request is outstanding while rst is high.
     always @(posedge clk) if(rst) assume(!req);
 
     // Clause 2: Once req is raised it stays raised until ack comes back.
-    always @(posedge clk) if(req_recieved) assume(req);
+    always @(posedge clk) if(f_req_received) assume(req);
 
     // Clause 3: addr does not change while a request is in flight.
-    always @(posedge clk) if(req_recieved) assume(addr == $past(addr));
+    always @(posedge clk) if(f_req_received) assume(addr == $past(addr));
 
     // ------------------------------------------------------------------
     // TODO -- COVER statements. Last.
@@ -314,6 +315,17 @@ module props (
     // and names the source line of any that cannot run. It is worth a run
     // before you believe a green board.
     // ------------------------------------------------------------------
+
+    reg [3:0] f_acks;
+    always @(posedge clk)
+        if (rst)      f_acks <= 4'd0;
+        else if (ack) f_acks <= f_acks + 4'd1;
+
+    always @(posedge clk) if ( f_past_valid && !rst && !$past(rst)) begin
+        cover(f_req_received && ack);
+        cover(f_req_received && (f_outstanding == 4));
+        cover(f_acks == 2);
+    end
 
 endmodule
 
