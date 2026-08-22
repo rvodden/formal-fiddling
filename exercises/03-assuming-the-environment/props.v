@@ -23,6 +23,13 @@
 // Write the assertions first, leave the assumptions out, and run it. The
 // correct design FAILS.
 //
+// (The three TODO blocks below are in the order the FINISHED file should
+// read -- assumptions, then assertions, then cover -- which is not the
+// order you write them in. Each block says where it comes in the writing
+// order. Fill in the assertions block first and leave the one above it
+// empty; that is the point of this exercise and the reason the blocks are
+// labelled rather than numbered.)
+//
 // Read the counterexample -- `make trace TASK=good'. Exactly which one
 // you get depends on which assertions you wrote, but it will be some
 // version of the same thing: the solver started a transaction and then
@@ -111,9 +118,12 @@
 //   make bad1   must FAIL  -- leaves ack up for a clock after the request
 //   make bad2   must FAIL  -- answers one clock early, for 3 of 4 addresses
 //   make bad3   must FAIL  -- address 7 is never answered at all
+//   make bad4   must FAIL  -- reset does not clear the acknowledge, so a
+//                             stale one is still on the wire the clock
+//                             after reset lets go
 //   make cover  must PASS
 //
-//   make        all five, with each verdict checked
+//   make        all six, with each verdict checked
 //
 // bad2 is the one that decides whether your property set is any good. Its
 // handshake is flawless -- one acknowledge per request, never outside a
@@ -160,7 +170,19 @@ module props (
         else                    f_outstanding <= f_outstanding + 4'd1;
 
     // ------------------------------------------------------------------
-    // TODO 1: your ASSUMPTIONS -- what a legal master promises.
+    // TODO -- ASSUMPTIONS: what a legal master promises.
+    //
+    // WRITE THESE SECOND. Leave this block empty until you have written
+    // the assertions below and watched `make good' fail; these are what
+    // you add to explain why that failure was the environment's fault and
+    // not the design's.
+    //
+    // They sit ABOVE the assertions in the finished file even though you
+    // arrive at them afterwards. A reader has to be able to see the whole
+    // environment model before believing anything below it -- the only
+    // question worth asking of a property set is what it took for
+    // granted, and an assumption buried among the assertions is the one
+    // nobody audits. See docs/style.md.
     //
     //   - nothing is outstanding while rst is high
     //   - a request that has not been answered does not go away, and its
@@ -173,7 +195,10 @@ module props (
 
 
     // ------------------------------------------------------------------
-    // TODO 2: your ASSERTIONS -- what the slave owes.
+    // TODO -- ASSERTIONS: what the slave owes.
+    //
+    // WRITE THESE FIRST, and run `make good' before you write a single
+    // line in the assumptions block above.
     //
     //   - no acknowledge unless there is a request underneath it
     //   - no acknowledge on the clock after reset
@@ -207,12 +232,19 @@ module props (
 
 
     // ------------------------------------------------------------------
-    // TODO 3: your COVER statements.
+    // TODO -- COVER statements. Last.
     //
     //   - a request is answered at all
     //   - a request with the longest latency (address 3) is answered
     //   - two requests are answered in the same trace, so you know the
     //     slave can be used more than once
+    //
+    // And a habit worth forming here: if you are ever unsure whether an
+    // assertion actually RUNS, cover its guard. An assertion whose guard
+    // is never satisfied cannot fail, so it passes -- and a passing
+    // assertion that never ran is indistinguishable from one that held.
+    // It costs one line to find out, and the answer is occasionally
+    // startling.
     // ------------------------------------------------------------------
 
 endmodule

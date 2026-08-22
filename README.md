@@ -306,7 +306,15 @@ the hardware does — but the inputs cannot happen, because no legal master
 moves an address mid-transaction. Deciding which of those two things you
 are looking at, every time, is the central habit of the subject.
 
-**Watch for:** `bad2` answers one clock early and its handshake is
+**Watch for:** `bad4` misbehaves on exactly one clock — the first one out
+of reset — and is indistinguishable from the correct slave thereafter. It
+asks whether anything you wrote actually *runs* on that clock, and often
+nothing does: the natural guard `!rst && !$past(rst)` excludes it, so a
+clause-5 assertion placed inside that block is unreachable rather than
+merely wrong. It never fires, never fails, and looks exactly like a
+property that holds.
+
+**Also watch for:** `bad2` answers one clock early and its handshake is
 otherwise flawless. And `bad3` never answers at all, which passes every
 property of the form "the answer is correct" — because all of them are
 conditional on an answer arriving. That is where safety and liveness part

@@ -3,6 +3,7 @@ good
 bad1
 bad2
 bad3
+bad4
 cover
 
 [options]
@@ -10,6 +11,7 @@ good:  mode bmc
 bad1:  mode bmc
 bad2:  mode bmc
 bad3:  mode bmc
+bad4:  mode bmc
 cover: mode cover
 # Room for two back-to-back four-clock transactions plus reset, which is
 # what the last cover statement asks for.
@@ -23,6 +25,7 @@ good:  read -formal good.v
 bad1:  read -formal bad1_ack_without_req.v
 bad2:  read -formal bad2_early.v
 bad3:  read -formal bad3_hangs.v
+bad4:  read -formal bad4_stale_ack.v
 cover: read -formal good.v
 read -formal props.v
 read -formal formal_top.v
@@ -35,3 +38,4 @@ dut/good.v
 dut/bad1_ack_without_req.v
 dut/bad2_early.v
 dut/bad3_hangs.v
+dut/bad4_stale_ack.v
