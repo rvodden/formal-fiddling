@@ -1,4 +1,5 @@
 [tasks]
+vacuity
 good
 bad1
 bad2
@@ -7,6 +8,7 @@ bad4
 cover
 
 [options]
+vacuity: mode cover
 good:  mode bmc
 bad1:  mode bmc
 bad2:  mode bmc
@@ -22,6 +24,7 @@ smtbmc z3
 
 [script]
 good:  read -formal good.v
+vacuity:  read -formal good.v
 bad1:  read -formal bad1_ack_without_req.v
 bad2:  read -formal bad2_early.v
 bad3:  read -formal bad3_hangs.v
@@ -30,6 +33,20 @@ cover: read -formal good.v
 read -formal props.v
 read -formal formal_top.v
 prep -top formal_top
+
+# The vacuity task. Can every assertion you wrote ever RUN?
+#
+# chformal -coverenable turns each assertion's ENABLE -- the condition it
+# sits under -- into a cover statement. An assertion whose enable the
+# solver cannot reach never executes, so it cannot fail, so it passes. A
+# passing assertion that never ran is indistinguishable from one that
+# held, and that is the failure this task exists to make visible.
+#
+# The hand-written cover statements are removed first, so this task asks
+# only about assertions and the `cover' task keeps asking about those.
+vacuity: chformal -cover  -remove
+vacuity: chformal -assert -coverenable
+vacuity: chformal -assert -remove
 
 [files]
 props.v

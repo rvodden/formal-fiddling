@@ -9,6 +9,8 @@ verdict_unknown
 verdict_error
 verdict_cover
 verdict_empty
+verdict_dead
+verdict_alive
 
 [options]
 verdict_pass:     mode bmc
@@ -17,6 +19,8 @@ verdict_unknown:  mode prove
 verdict_error:    mode bmc
 verdict_cover:    mode cover
 verdict_empty:    mode cover
+verdict_dead:     mode cover
+verdict_alive:    mode cover
 depth 12
 
 [engines]
@@ -29,12 +33,23 @@ verdict_unknown:  read -formal -DWANT_UNKNOWN tiny.v
 verdict_error:    read -formal broken_syntax.v
 verdict_cover:    read -formal tiny.v
 verdict_empty:    read -formal -DNO_COVER tiny.v
+verdict_dead:     read -formal -DWANT_PASS -DWANT_DEAD tiny.v
+verdict_alive:    read -formal -DWANT_PASS tiny.v
 verdict_error:    prep -top broken_syntax
 verdict_pass:     prep -top tiny
 verdict_fail:     prep -top tiny
 verdict_unknown:  prep -top tiny
 verdict_cover:    prep -top tiny
 verdict_empty:    prep -top tiny
+verdict_dead:     prep -top tiny
+verdict_alive:    prep -top tiny
+# The vacuity transform, exactly as the exercises use it.
+verdict_dead:     chformal -cover -remove
+verdict_dead:     chformal -assert -coverenable
+verdict_dead:     chformal -assert -remove
+verdict_alive:    chformal -cover -remove
+verdict_alive:    chformal -assert -coverenable
+verdict_alive:    chformal -assert -remove
 
 [files]
 tiny.v

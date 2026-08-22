@@ -12,6 +12,6 @@ PROPS := props.v
 # correct in the error message.
 REF := $(ROOT)/exercises/00-worked-example/props.v
 
-TASKS := buggy:fail fixed:pass cover:pass vacuous:pass vacuous_cover:fail
+TASKS := buggy:fail fixed:pass cover:pass vacuous:pass vacuous_cover:fail vacuity:pass
 
 include $(ROOT)/mk/formal.mk

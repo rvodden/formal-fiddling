@@ -59,6 +59,28 @@ and has checked nothing — so the harness reports that as `empty` rather
 than as a pass. See below.
 | `prove` | both halves of an induction proof | your `cover` statements | proved for all time | see §6 |
 
+Every exercise also has a **`vacuity`** task. It is `cover` mode with a
+transform applied first:
+
+```
+chformal -cover  -remove          drop the hand-written cover statements
+chformal -assert -coverenable     one cover per assertion ENABLE
+chformal -assert -remove
+```
+
+so it asks a single question: **can every assertion you wrote ever run?**
+An assertion whose enable the solver cannot reach never executes, so it
+cannot fail, so it passes — and a passing assertion that never ran is
+indistinguishable from one that held. `make vacuity` names the source line
+of any that cannot.
+
+It catches an assertion under a guard that contradicts an enclosing one,
+and an assertion the assumptions have made unreachable. It does **not**
+catch an assertion whose *body* is a tautology — `-coverenable` covers the
+enable, not the negated condition, and yosys has no built-in that covers
+`EN && !A`. For that class, `make lint` is the defence: the usual cause is
+a narrowed expression (§12), and the width check finds it.
+
 So **`make cover` is not a second opinion on your assertions.** In
 `mode cover` the assertions are not checked at all, and in `mode bmc` the
 cover statements are not. They are different questions about one file,
@@ -301,7 +323,8 @@ cover something on the far side of it.
 - **insufficient depth** — the unrolling never got near the behaviour you
   claimed to check (exercise 05)
 - **a guarded assertion that never ran** — `if (tracked_beat) assert(...)`
-  where the tracked beat never happened (exercise 07)
+  where the tracked beat never happened (exercise 07). The `vacuity` task
+  automates this one: see §2.
 
 ### what cover does not catch
 
@@ -496,6 +519,8 @@ wrap, because modular subtraction is what you meant.
 | a cover statement is unreachable | over-constraint, or depth too shallow (§7) |
 | `\$past is only allowed in clocked blocks` | move it inside `always @(posedge clk)` (§5) |
 | task "fails" but nothing was checked | it did not compile — the harness reports ERROR separately |
+| `vacuity` FAILs | an assertion can never run; read the guard it sits under and the guard of any block enclosing it (§2) |
+| `vacuity` says `empty` | there are no assertions in the file yet |
 | proof is slow | reduce depth, narrow the data, or find an invariant so induction closes |
 
 ---

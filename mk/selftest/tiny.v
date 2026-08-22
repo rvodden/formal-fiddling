@@ -37,6 +37,12 @@ module tiny (
     always @(*) if (pv) assert(c != 16'd7);
 `endif
 
+`ifdef WANT_DEAD
+    // An assertion whose enable contradicts itself: it can never execute,
+    // so it can never fail, so the task passes having checked nothing.
+    always @(*) if (pv && !pv) assert(c == 16'd12345);
+`endif
+
 `ifndef NO_COVER
     always @(posedge clk) if (pv) cover(c == 16'd4);
 `endif

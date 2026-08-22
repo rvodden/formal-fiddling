@@ -177,10 +177,25 @@ unreachable cover statement is an alarm rather than a success. That is
 what exercises 04 and 05 are about, and
 [§2 of the crib sheet](docs/formal-crib-sheet.md) has the longer version.
 
+**One task is generated rather than written.** Every exercise has a
+`vacuity` task: `cover` mode, with each assertion's *enable* turned into a
+cover statement by `chformal -coverenable`. It asks whether every
+assertion you wrote can ever **run**.
+
+That is a third route to a hollow pass, distinct from the two above. An
+assertion under a guard that contradicts an enclosing one — or one the
+assumptions have made unreachable — never executes, so it never fails, so
+it passes. Exercise 03's `bad4` exists because a reader's property set had
+exactly that, and got every other verdict right.
+
+It does not catch an assertion whose *body* is a tautology; `make lint`'s
+width check is the defence there, since the usual cause is a narrowed
+expression.
+
 The exercise's `Makefile` says what verdict each task *should* give:
 
 ```make
-TASKS := good:pass bad1:fail bad2:fail bad3:fail cover:pass
+TASKS := good:pass bad1:fail bad2:fail bad3:fail cover:pass vacuity:pass
 ```
 
 Your property set is finished when every verdict matches — passing the

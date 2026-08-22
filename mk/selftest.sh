@@ -82,6 +82,13 @@ check verdict_empty   pass    reject
 check verdict_empty   fail    reject
 check verdict_empty   unknown reject
 
+# The vacuity transform: an assertion that can run must be accepted, and
+# one whose enable contradicts itself must not. This is what every
+# exercise's `vacuity' task relies on, and it reports "clean" when broken
+# in exactly the way everything else here does.
+check verdict_alive   pass    accept
+check verdict_dead    pass    reject
+
 # THE IMPORTANT ONES. A design that does not build must not satisfy any
 # expectation at all -- least of all `fail', which is what most tasks in
 # this repo are expecting and which would therefore hide a broken property

@@ -7,12 +7,14 @@
 #   cover          reachability              PASS
 
 [tasks]
+vacuity
 bmc
 prove_weak
 prove_strong
 cover
 
 [options]
+vacuity: mode cover
 bmc:           mode bmc
 prove_weak:    mode prove
 prove_strong:  mode prove
@@ -25,11 +27,26 @@ smtbmc z3
 [script]
 read -formal fifo_ptrs.v
 prove_strong:  read -formal -DSTRENGTHEN props.v
+vacuity:  read -formal -DSTRENGTHEN props.v
 bmc:           read -formal props.v
 prove_weak:    read -formal props.v
 cover:         read -formal props.v
 read -formal formal_top.v
 prep -top formal_top
+
+# The vacuity task. Can every assertion you wrote ever RUN?
+#
+# chformal -coverenable turns each assertion's ENABLE -- the condition it
+# sits under -- into a cover statement. An assertion whose enable the
+# solver cannot reach never executes, so it cannot fail, so it passes. A
+# passing assertion that never ran is indistinguishable from one that
+# held, and that is the failure this task exists to make visible.
+#
+# The hand-written cover statements are removed first, so this task asks
+# only about assertions and the `cover' task keeps asking about those.
+vacuity: chformal -cover  -remove
+vacuity: chformal -assert -coverenable
+vacuity: chformal -assert -remove
 
 [files]
 fifo_ptrs.v

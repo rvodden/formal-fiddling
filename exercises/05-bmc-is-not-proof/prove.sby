@@ -8,12 +8,15 @@
 #   depth 64   reachability -> deep_cover     PASS
 
 [tasks]
+vacuity
 shallow
 shallow_cover
 deep
 deep_cover
 
 [options]
+vacuity: mode cover
+vacuity: depth 24
 shallow:        mode bmc
 deep:           mode bmc
 shallow_cover:  mode cover
@@ -32,6 +35,20 @@ read -formal watchdog.v
 read -formal props.v
 read -formal formal_top.v
 prep -top formal_top
+
+# The vacuity task. Can every assertion you wrote ever RUN?
+#
+# chformal -coverenable turns each assertion's ENABLE -- the condition it
+# sits under -- into a cover statement. An assertion whose enable the
+# solver cannot reach never executes, so it cannot fail, so it passes. A
+# passing assertion that never ran is indistinguishable from one that
+# held, and that is the failure this task exists to make visible.
+#
+# The hand-written cover statements are removed first, so this task asks
+# only about assertions and the `cover' task keeps asking about those.
+vacuity: chformal -cover  -remove
+vacuity: chformal -assert -coverenable
+vacuity: chformal -assert -remove
 
 [files]
 watchdog.v

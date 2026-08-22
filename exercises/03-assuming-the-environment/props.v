@@ -243,8 +243,10 @@ module props (
     // assertion actually RUNS, cover its guard. An assertion whose guard
     // is never satisfied cannot fail, so it passes -- and a passing
     // assertion that never ran is indistinguishable from one that held.
-    // It costs one line to find out, and the answer is occasionally
-    // startling.
+    //
+    // `make vacuity' does this for every assertion in the file at once,
+    // and names the source line of any that cannot run. It is worth a run
+    // before you believe a green board.
     // ------------------------------------------------------------------
 
 endmodule

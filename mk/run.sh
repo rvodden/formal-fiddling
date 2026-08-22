@@ -140,20 +140,53 @@ $(printf '%s\n' "$out" | grep -iE '^(ERROR|.*(ERROR:|syntax error))' | head -4 |
 "
                 ;;
             fail)
-                report="$report
+                # A cover-mode task does not fail with a counterexample; it
+                # fails because something could not be REACHED, and sby
+                # names the source line. Saying "counterexample" and
+                # offering `make trace' there sends the reader looking for
+                # a trace that does not exist.
+                unreached=$(printf '%s\n' "$out" \
+                    | grep -oE 'Unreached cover statement at [^ ]+ [^ ]+\.v:[0-9.-]+' \
+                    | grep -oE '[^ ]+\.v:[0-9.-]+' | sort -u | head -5)
+                if [ -n "$unreached" ] && [ "$task" = "vacuity" ]; then
+                    report="$report
+  $task: these assertions can never run --
+$(printf '%s\n' "$unreached" | sed 's/^/      /')
+      Each line is an assertion whose enable the solver cannot reach. An
+      assertion that never executes cannot fail, so it passes -- and a
+      passing assertion that never ran looks exactly like one that held.
+      Read the condition it sits under, and the guard of any block
+      enclosing it: the two often contradict each other.
+"
+                elif [ -n "$unreached" ]; then
+                    report="$report
+  $task could not reach --
+$(printf '%s\n' "$unreached" | sed 's/^/      /')
+"
+                else
+                    report="$report
   $task produced a counterexample:
 $(printf '%s\n' "$out" | grep -E 'summary: +(failed assertion|counterexample)' | head -3 | sed 's/.*summary: */      /')
       Read it with:  make trace TASK=$task
 "
+                fi
                 ;;
             empty)
-                report="$report
+                if [ "$task" = "vacuity" ]; then
+                    report="$report
+  $task had nothing to check: this task covers the ENABLE of every
+      assertion in your property file, and the file does not contain any
+      assertions yet. Write some.
+"
+                else
+                    report="$report
   $task passed without reaching a single cover statement, because the
       property file does not contain any. An empty cover set is
       satisfiable instantly and proves nothing -- which is exactly the
       hollow PASS exercise 04 is about, so it is not counted as one.
       Write the cover statements the exercise asks for.
 "
+                fi
                 ;;
             unknown)
                 report="$report
