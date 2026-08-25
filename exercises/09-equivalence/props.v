@@ -81,6 +81,37 @@
 // function, which is a weaker and much less useful claim.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+// This is the one exercise with TWO designs in the harness, fed the same
+// input, and nothing joining them but the property you write.
+//
+//   name     width   comes from      what it is
+//   ------------------------------------------------------------------
+//   clk        1     harness         The clock.
+//   rst        1     harness         Reset, synchronous, active high.
+//   w          8     THE SOLVER      The word whose set bits are being
+//                                    counted. All 256 values legal, so
+//                                    there is nothing to assume.
+//   ref_cnt    4     THE REFERENCE   popcount_ref's answer. Combinational
+//                                    -- available on the same clock as
+//                                    the `w' that produced it.
+//   dut_cnt    4     THE OPTIMISED   popcount_pipe's answer. Registered,
+//                                    so it lags `ref_cnt' by one clock.
+//
+// Both cnt ports are outputs of a design, so both are things you assert
+// ABOUT rather than assume. The property relates them, and the one clock
+// of skew between them is not an inconvenience to work around -- it is
+// half of what "equivalent" means here.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- the pipelined tree, correct
@@ -102,9 +133,12 @@
 module props (
     input wire       clk,
     input wire       rst,
+    // driven by the solver
     input wire [7:0] w,
-    input wire [3:0] ref_cnt,
-    input wire [3:0] dut_cnt
+
+    // the two designs' answers, one clock apart
+    input wire [3:0] ref_cnt,   // combinational
+    input wire [3:0] dut_cnt    // registered
 );
 
     initial assume(rst);

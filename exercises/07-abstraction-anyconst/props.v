@@ -104,6 +104,41 @@
 // only clause 5 notices that it never runs out.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+// The harness instantiates AW = 2 and DW = 4: a four-deep FIFO carrying
+// four-bit values. Note DW -- the default in the parameter list below is
+// 8, and the harness passes 4. Reading widths off a parameter default is
+// a good way to misread a trace.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock.
+//   rst       1     harness      Reset, synchronous, active high.
+//   push      1     THE SOLVER   Request to add an entry.
+//   wdata    DW     THE SOLVER   The value being offered. Free -- and
+//                                the one place in this repo where an
+//                                assumption about a data input costs
+//                                nothing, because the value it is
+//                                pinned to is itself arbitrary. See the
+//                                header.
+//   pop       1     THE SOLVER   Request to remove an entry.
+//   rdata    DW     THE DUT      The value on offer at the head.
+//                                First-word-fall-through: valid whenever
+//                                the queue is not empty, with no read
+//                                latency, so the moment of the pop is
+//                                the moment the value is on the wire.
+//   full      1     THE DUT      No room.
+//   empty     1     THE DUT      Nothing to take.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- a correct FIFO
@@ -127,9 +162,12 @@ module props #(
 ) (
     input wire          clk,
     input wire          rst,
+    // driven by the solver
     input wire          push,
     input wire [DW-1:0] wdata,
     input wire          pop,
+
+    // driven by the DUT
     input wire [DW-1:0] rdata,
     input wire          full,
     input wire          empty

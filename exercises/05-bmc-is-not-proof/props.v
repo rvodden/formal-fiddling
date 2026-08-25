@@ -52,6 +52,30 @@
 // are told.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock.
+//   rst       1     harness      Reset, synchronous, active high.
+//   kick      1     THE SOLVER   The signal that restarts the timeout.
+//                                Free on every clock: the solver may
+//                                kick constantly, never, or on whatever
+//                                pattern makes your properties hardest.
+//   bark      1     THE DUT      The watchdog's alarm. This design never
+//                                raises it -- that is the bug -- so
+//                                `cover(bark)' is unreachable at every
+//                                depth and is the one cover statement
+//                                NOT to write. See the TODO below.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 // Write a property set so that:

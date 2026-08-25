@@ -73,6 +73,54 @@
 // which simply never passes anything on cannot satisfy the rest.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+// DW is 4 in the harness. The ports come in three groups, and knowing
+// which group a port is in tells you what you may do with it.
+//
+//   name          width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk             1     harness      The clock.
+//   rst             1     harness      Reset, synchronous, active high.
+//
+//   -- UPSTREAM: the source side. ASSUME the contract here. ------------
+//   s_valid         1     THE SOLVER   The source is offering a beat.
+//   s_data         DW     THE SOLVER   The beat it is offering.
+//   s_ready         1     THE DUT      This module's answer: it has room.
+//
+//   -- DOWNSTREAM: the sink side. ASSERT the contract here. ------------
+//   m_valid         1     THE DUT      This module is offering a beat.
+//   m_data         DW     THE DUT      The beat it is offering.
+//   m_ready         1     THE SOLVER   The sink is willing to take it.
+//
+//   -- WHITE BOX ------------------------------------------------------
+//   f_skid_data    DW     THE DUT      The skid register's contents,
+//                                      exposed for the proof alone. It
+//                                      drives nothing and synthesis
+//                                      removes it; the `f_' says so.
+//
+// NOTE THE ZIG-ZAG. Each side has one port driven by the solver and one
+// driven by the design, and they are not the same port on both sides:
+// `s_ready' is ours and `m_ready' is theirs. That is what makes this
+// module a component in the MIDDLE of a stream rather than an endpoint,
+// and getting it backwards -- assuming something about s_ready, say --
+// would be assuming away the backpressure the whole design exists to
+// survive.
+//
+// `f_skid_data' is the one port with no counterpart in the hardware
+// interface. It is here because a proof by induction has to be able to
+// say what is inside the buffer, and reaching into the hierarchy from a
+// property file would tie these properties to one implementation's
+// signal names.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- the correct skid buffer
@@ -126,11 +174,13 @@ module props #(
     input wire          clk,
     input wire          rst,
 
+    // upstream: s_valid/s_data from the solver, s_ready from the DUT
     input wire          s_valid,
     input wire [DW-1:0] s_data,
     input wire          s_ready,
     input wire [DW-1:0] f_skid_data,       // white-box: the skid register
 
+    // downstream: m_valid/m_data from the DUT, m_ready from the solver
     input wire          m_valid,
     input wire [DW-1:0] m_data,
     input wire          m_ready

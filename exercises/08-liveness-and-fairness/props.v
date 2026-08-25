@@ -156,6 +156,35 @@
 // clocks" -- makes every policy fair and every result here worthless.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock.
+//   rst       1     harness      Reset, synchronous, active high.
+//   req       2     THE SOLVER   One bit per master. req[0] is master 0.
+//                                Free, and the FAIRNESS ASSUMPTION is
+//                                what you write about it -- the hardest
+//                                assumption in the repo to get right,
+//                                because a slightly too strong one makes
+//                                every arbitration policy look fair.
+//   gnt       2     THE DUT      One bit per master, REGISTERED -- so it
+//                                answers the request of the PREVIOUS
+//                                clock. Assert against $past(req), not
+//                                req, or the correct arbiter fails on
+//                                every transfer.
+//
+// Two masters, so both ports are two bits and bit N belongs to master N
+// throughout. A grant lasts one clock.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- round robin, one-clock grants
@@ -177,7 +206,10 @@
 module props (
     input wire       clk,
     input wire       rst,
+    // driven by the solver -- bit N is master N
     input wire [1:0] req,
+
+    // driven by the DUT, and REGISTERED: it answers $past(req)
     input wire [1:0] gnt
 );
 

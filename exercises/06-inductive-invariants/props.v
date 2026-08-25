@@ -106,6 +106,43 @@
 // proof needs it. Discovering which one clause 4 needs is the exercise.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+// AW is 3 in the harness, so this is an eight-deep FIFO and the pointers
+// are four bits: three of address and one of wrap.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock.
+//   rst       1     harness      Reset, synchronous, active high.
+//   push      1     THE SOLVER   Request to add an entry. Free; the
+//                                design ignores it when full.
+//   pop       1     THE SOLVER   Request to remove one. Free; the design
+//                                ignores it when empty.
+//   count   AW+1    THE DUT      Occupancy, held in a register of its
+//                                own.
+//   wptr    AW+1    THE DUT      Write pointer. The top bit is the WRAP
+//                                flag, not an address bit.
+//   rptr    AW+1    THE DUT      Read pointer, same shape.
+//   full      1     THE DUT      Computed from the pointers: equal
+//                                indices, differing wrap bits.
+//   empty     1     THE DUT      Computed from the pointers: equal.
+//
+// THE POINT OF THIS PORT LIST is that `count', `wptr' and `rptr' are
+// three views of ONE fact, and the design never checks them against each
+// other. In silicon they cannot disagree, because reset starts them
+// agreeing and every operation moves both. Induction does not start at
+// reset. That is the whole exercise, and it is visible in the ports
+// before you have written a line.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make bmc            PASS     -- bounded, as in every exercise so far
@@ -171,8 +208,11 @@ module props #(
 ) (
     input wire        clk,
     input wire        rst,
+    // driven by the solver
     input wire        push,
     input wire        pop,
+
+    // driven by the DUT -- three views of one fact, never cross-checked
     input wire [AW:0] count,
     input wire [AW:0] wptr,
     input wire [AW:0] rptr,

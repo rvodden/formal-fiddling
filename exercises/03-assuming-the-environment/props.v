@@ -111,6 +111,36 @@
 // FAILS until you have written the assumptions.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock.
+//   rst       1     harness      Reset, synchronous, active high.
+//   req       1     THE SOLVER   The master's request. Free, and the
+//                                master contract (clauses 1 and 2) is
+//                                what you assume about it.
+//   addr      3     THE SOLVER   The address. Free in WHICH value it
+//                                takes -- all eight are legal -- and
+//                                constrained by clause 3 only in when it
+//                                may CHANGE.
+//   ack       1     THE DUT      The slave's acknowledge. Everything you
+//                                assert is about this one wire.
+//
+// This exercise is the assume/assert boundary itself, so it is worth
+// being deliberate: `req' and `addr' are the two ports you are allowed
+// to constrain, `ack' is the one you are not. An assumption about `ack'
+// would be telling the solver what the slave does rather than checking
+// it -- and it would pass.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- the correct slave, once you have assumed
@@ -137,8 +167,11 @@
 module props (
     input wire       clk,
     input wire       rst,
+    // driven by the solver -- assume about these
     input wire       req,
     input wire [2:0] addr,
+
+    // driven by the DUT -- assert about this
     input wire       ack
 );
 

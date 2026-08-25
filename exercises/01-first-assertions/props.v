@@ -63,6 +63,31 @@
 // dut/bad1_highest.v, and it is what most first attempts let through.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   req       8     THE SOLVER   The eight request lines. All 256 values
+//                                are legal, so there is nothing to
+//                                assume and this file contains no
+//                                `assume' at all.
+//   idx       3     THE DUT      Which request the encoder picked --
+//                                meaningful only while vld is high.
+//   vld       1     THE DUT      Whether it found one.
+//
+// NOTE THERE IS NO CLOCK. The encoder is combinational, so this module
+// has no clk and no rst, every property is `always @(*)', and there is no
+// f_past_valid to gate anything on. From exercise 02 onwards there is
+// state and all three come back.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- a correct encoder

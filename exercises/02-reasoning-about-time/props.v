@@ -128,6 +128,31 @@
 // 4, and it is half of it.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock.
+//   rst       1     harness      Reset, synchronous, active high.
+//   inc       1     THE SOLVER   Count-enable, free on every clock.
+//                                Deliberately unconstrained: assuming
+//                                anything about it here would narrow
+//                                what you prove and buy nothing.
+//   gray      4     THE DUT      The counter's output, in Gray code.
+//                                All sixteen values are legal ones for
+//                                it to show; what the specification
+//                                constrains is the ORDER it shows them
+//                                in, which is why every property in this
+//                                file relates one clock to the next.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 //   make good   must PASS  -- a correct Gray counter

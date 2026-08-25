@@ -45,6 +45,35 @@
 // and 4 together: it keeps counting past LIMIT, round to 15, and wraps.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// Every port here is an `input', including the ones carrying the design's
+// outputs: a property module observes and never drives, which is also why
+// they take no `_i' / `_o' suffix. What matters is where the value COMES
+// FROM, because that is the assume/assert boundary -- you may `assume'
+// about what the solver drives, and must `assert' about what the design
+// drives.
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock. Undriven at the top of the
+//                                harness, so the solver produces the
+//                                edges.
+//   rst       1     harness      Reset, synchronous, active high.
+//                                `initial assume(rst)' starts every
+//                                trace with it high.
+//   inc       1     THE SOLVER   Count-enable. Nothing drives it, so the
+//                                solver sets it either way on every
+//                                clock -- that is the exhaustive
+//                                stimulus. No assumption restrains it,
+//                                and none should.
+//   count     4     THE DUT      The counter's value. LIMIT is 10, so a
+//                                correct count runs 0..10; four bits
+//                                hold up to 15, which is why the
+//                                saturation failure is visible as 11
+//                                rather than wrapping to something legal.
+//
+// ---------------------------------------------------------------------
 // WHAT THE FIVE TASKS DO
 //
 //   make buggy          FAIL -- the counter as shipped sails past LIMIT
