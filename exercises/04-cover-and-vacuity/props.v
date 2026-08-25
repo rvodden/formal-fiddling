@@ -88,6 +88,74 @@
 // Working out why is the exercise.
 //
 // ---------------------------------------------------------------------
+// THE PORTS
+//
+// A property module is an OBSERVER. Every one of its ports is an `input',
+// including the ones carrying the design's outputs, because this module
+// watches and never drives. That is also why they have no `_i' / `_o'
+// suffix: the suffix names a direction of participation, and this module
+// does not participate. See docs/style.md.
+//
+// What matters is not the port direction but WHERE THE VALUE COMES FROM,
+// because that is the assume/assert boundary:
+//
+//   name    width   comes from   what it is
+//   ------------------------------------------------------------------
+//   clk       1     harness      The clock. Undriven at the top of the
+//                                harness, so the solver produces the
+//                                edges; every property here is sampled
+//                                on the rising one.
+//
+//   rst       1     harness      Reset, synchronous and active high.
+//                                Free, but `initial assume(rst)' below
+//                                makes every trace start with it high.
+//
+//   push      1     THE SOLVER   A request to add an entry. Nothing
+//                                drives it, so on every clock the solver
+//                                may set it either way -- that is the
+//                                exhaustive stimulus. A1 below is the
+//                                only thing restraining it.
+//
+//   pop       1     THE SOLVER   A request to remove an entry. Same
+//                                again, restrained only by A2.
+//
+//   count     3     THE DUT      How many entries the queue believes it
+//                                is holding.
+//
+//   full      1     THE DUT      The design's claim that there is no
+//                                room. Clause 6 says this should be high
+//                                exactly when count == DEPTH. It is the
+//                                clause the design gets wrong.
+//
+//   empty     1     THE DUT      The design's claim that there is
+//                                nothing to take. High exactly when
+//                                count == 0.
+//
+// The four solver-and-harness signals are what you may `assume' about.
+// The three DUT signals are what you must `assert' about. Getting that
+// backwards is how a property set ends up proving nothing -- assume
+// something about `count' and you have told the solver what the answer
+// is rather than checked it.
+//
+// A NOTE ON THE WIDTH OF count
+//
+// Three bits, because a correct occupancy runs 0 to 4 and that is what
+// three bits are for. Nothing clever there.
+//
+// What matters is the consequence: three bits also hold 5, so when this
+// design admits a fifth entry the count READS 5. The overflow stays
+// visible, which is the only reason `assert(count <= DEPTH)' is a
+// meaningful thing to write.
+//
+// A counter sized so tightly that its illegal values wrap into legal ones
+// cannot be asserted about that way at all: the assertion comes back
+// satisfied by a queue that has just lost its contents, and the run is
+// green. That is worth a thought whenever you intend to bound a counter,
+// and it is the same argument that sizes the PROPERTY FILE's own counters
+// in exercises 05 and 07 -- there from the specification rather than from
+// the design, which is the point of exercise 05.
+//
+// ---------------------------------------------------------------------
 // WHAT TO DO
 //
 // Write cover statements at the bottom of this file so that:
@@ -116,13 +184,19 @@
 module props #(
     parameter DEPTH = 4
 ) (
+    // clock and reset -- reset is synchronous and active high
     input wire       clk,
     input wire       rst,
+
+    // driven by the solver: free on every clock, restrained only by the
+    // assumptions below. These are what you may `assume' about.
     input wire       push,
     input wire       pop,
-    input wire [2:0] count,
-    input wire       full,
-    input wire       empty
+
+    // driven by the DUT. These are what you must `assert' about.
+    input wire [2:0] count,          // occupancy, 0..DEPTH if correct
+    input wire       full,           // should be high exactly at DEPTH
+    input wire       empty           // should be high exactly at 0
 );
 
     initial assume(rst);
