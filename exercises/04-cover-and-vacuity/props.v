@@ -250,6 +250,11 @@ module props #(
     // whose answer is the assumption itself.
     // ==================================================================
 
+    always @(posedge clk) begin
+        cover( count == DEPTH );
+        cover( count == DEPTH && ~pop );
+        cover( count == DEPTH / 2);
+    end
 endmodule
 
 `default_nettype wire
