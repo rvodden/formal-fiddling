@@ -215,6 +215,9 @@ module props #(
     // about what that costs you.
     // ------------------------------------------------------------------
 
+    always @(posedge clk) if(~rst) begin
+        if (f_quiet == TIMEOUT + 1) assert( bark == 1 );
+    end
 
     // ------------------------------------------------------------------
     // TODO 2: your COVER statements.
@@ -268,6 +271,8 @@ module props #(
     // makes the same point about the same mistake again.)
     // ------------------------------------------------------------------
 
+    always @(posedge clk)
+        cover(f_quiet == TIMEOUT + 2);
 endmodule
 
 `default_nettype wire
