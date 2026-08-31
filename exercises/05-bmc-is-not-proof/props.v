@@ -271,8 +271,11 @@ module props #(
     // makes the same point about the same mistake again.)
     // ------------------------------------------------------------------
 
-    always @(posedge clk)
-        cover(f_quiet == TIMEOUT + 2);
+    always @(posedge clk) if(!rst) begin
+        cover(f_quiet == TIMEOUT - 1);
+        cover(kick);
+    end
+    
 endmodule
 
 `default_nettype wire
