@@ -81,6 +81,17 @@ FILE=$(basename "$SBYFILE")
 
 # The sby mode for a task, from the [options] section: a `<task>: mode X'
 # line if there is one, otherwise a bare `mode X' default.
+depth_of() {
+    awk -v task="$1" '
+        /^\[/      { in_opts = ($0 ~ /^\[options\]/); next }
+        !in_opts   { next }
+                   { sub(/#.*/, "") }
+        $1 == task ":" && $2 == "depth" { specific = $3 }
+        $1 == "depth" { fallback = $2 }
+        END        { print (specific != "" ? specific : fallback) }
+    ' "$SBYFILE"
+}
+
 mode_of() {
     awk -v task="$1" '
         /^\[/      { in_opts = ($0 ~ /^\[options\]/); next }
@@ -149,14 +160,22 @@ $(printf '%s\n' "$out" | grep -iE '^(ERROR|.*(ERROR:|syntax error))' | head -4 |
                     | grep -oE 'Unreached cover statement at [^ ]+ [^ ]+\.v:[0-9.-]+' \
                     | grep -oE '[^ ]+\.v:[0-9.-]+' | sort -u | head -5)
                 if [ -n "$unreached" ] && [ "$task" = "vacuity" ]; then
+                    d=$(depth_of "$task")
                     report="$report
-  $task: these assertions can never run --
+  $task: these assertions did not run within ${d:-the} steps --
 $(printf '%s\n' "$unreached" | sed 's/^/      /')
-      Each line is an assertion whose enable the solver cannot reach. An
-      assertion that never executes cannot fail, so it passes -- and a
+      Each line is an assertion whose enable the solver could not reach.
+      An assertion that never executes cannot fail, so it passes -- and a
       passing assertion that never ran looks exactly like one that held.
       Read the condition it sits under, and the guard of any block
       enclosing it: the two often contradict each other.
+
+      But note the wording. This task is itself a BOUNDED search, so it
+      cannot tell \"never\" from \"not within ${d:-that many} steps\". If the
+      assertion is guarded on something that legitimately takes a long
+      time to arrive -- a timeout expiring, a queue filling -- the guard
+      may be perfectly reachable and the depth simply too small. Check
+      that before you go looking for a contradiction.
 "
                 elif [ -n "$unreached" ]; then
                     report="$report

@@ -16,7 +16,12 @@ deep_cover
 
 [options]
 vacuity: mode cover
-vacuity: depth 24
+# 64, matching the deep tasks -- NOT the shallow ones. The vacuity task is
+# itself a bounded search, so a legitimate assertion whose enable takes 41
+# clocks to reach would be reported as unreachable at any smaller depth.
+# In this exercise of all exercises: the enable of "when the quiet spell
+# reaches TIMEOUT" needs the full forty-one steps, and 24 called it dead.
+vacuity: depth 64
 shallow:        mode bmc
 deep:           mode bmc
 shallow_cover:  mode cover
