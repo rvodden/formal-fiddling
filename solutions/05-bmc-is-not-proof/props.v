@@ -70,6 +70,14 @@ module props #(
         //     short of the timeout, so it sits just before the assertion
         //     it is guarding rather than on top of it.
         //
+        //     BELOW the bound the assertion sets, and that is the whole
+        //     reason for the -1. The assertion says f_quiet never passes
+        //     TIMEOUT+1, so a cover statement at TIMEOUT+2 would describe
+        //     a state only a BROKEN watchdog can reach -- it would pass
+        //     against the design in this exercise and go unreachable the
+        //     day somebody fixed it. Aim a cover statement at the
+        //     behaviour, never at the fault.
+        //
         //     Reaching it takes about forty steps. At depth 20 it is
         //     unreachable and `shallow_cover' fails, which is the alarm
         //     this exercise exists to make ring: the depth 20 run above

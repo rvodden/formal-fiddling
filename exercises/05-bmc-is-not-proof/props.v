@@ -125,8 +125,13 @@
 // ---------------------------------------------------------------------
 // HOW DEEP IS DEEP ENOUGH -- AND THE HONEST ANSWER
 //
+// The number under discussion here is `depth' -- the one in prove.sby's
+// [options] block, which says how many steps the solver unrolls. Nothing
+// in this section is about what to aim a cover statement at; that is
+// TODO 2, and the numbers are different on purpose.
+//
 // Here you can work it out: the bug needs the counter to pass 40, that
-// takes 41 clocks from reset, so anything over about 42 finds it and 64
+// takes 41 clocks from reset, so a DEPTH over about 42 finds it and 64
 // is comfortable.
 //
 // You could work it out because this design has one counter and a number
@@ -209,7 +214,25 @@ module props #(
     // sound. Some worth having:
     //
     //   - a long quiet spell: f_quiet reaching TIMEOUT - 1, which takes
-    //     about forty steps and is the one that fails at depth 20
+    //     about forty steps and is the one that fails at depth 20.
+    //
+    //     BELOW the bound your assertion sets, and that is not an
+    //     accident. Your assertion says f_quiet never gets past
+    //     TIMEOUT+1; a cover statement aimed at TIMEOUT+2 therefore
+    //     describes a state that ONLY A BROKEN DESIGN can reach. It
+    //     passes here, because the watchdog in this exercise is broken --
+    //     and goes unreachable the moment somebody fixes it.
+    //
+    //     That is the `cover(bark)' mistake below, wearing the other
+    //     face: one is unreachable because the design is broken, the
+    //     other reachable because it is. Cover statements describe states
+    //     the design is SUPPOSED to occupy, so they keep working when the
+    //     bug is gone -- which is when you need them.
+    //
+    //     Do not take the depth number from the section above for this.
+    //     42 is how far the SOLVER must unroll to find the bug; it is the
+    //     one value that cannot serve as a cover target, for the reason
+    //     just given.
     //   - the watchdog being kicked, so you know kicks are modelled
     //   - a short quiet spell, which is reachable at any depth and is
     //     there as a control: if this one fails too, something is wrong
@@ -223,13 +246,16 @@ module props #(
     // single quiet clock having elapsed. It silences the very alarm this
     // exercise is built around.
     //
-    // Do not write `cover(bark)'. It is the obvious thing to want and it
-    // is unreachable at EVERY depth, because the design never barks --
-    // so it fails both tasks and tells you nothing about either. Cover
-    // statements describe states the design is supposed to be able to
-    // reach; a cover statement aimed at the bug is an assertion written
-    // inside out. (Exercise 04's solution makes the same point about the
-    // same mistake, from the other direction.)
+    // Do not write `cover(bark)' either. It is the obvious thing to want
+    // and it is unreachable at EVERY depth, because the design never
+    // barks -- so it fails both tasks and tells you nothing about either.
+    //
+    // Same rule as above, other direction: a cover statement aimed at the
+    // bug is an assertion written inside out. `cover(bark)' asks for
+    // something the broken design cannot do; `cover(f_quiet == TIMEOUT+2)'
+    // asks for something only the broken design can do. Neither describes
+    // the watchdog you are trying to verify. (Exercise 04's solution
+    // makes the same point about the same mistake again.)
     // ------------------------------------------------------------------
 
 endmodule
