@@ -26,14 +26,15 @@ Every exercise runs several **tasks** — `make good`, `make bad1`,
 thing to understand first is that they mostly **run the same files**.
 What changes is the question being asked.
 
-Here is `exercises/01-first-assertions/prove.sby`, with two of its five
-tasks and all of its comments left out:
+Here is `exercises/01-first-assertions/prove.sby` -- three of its six
+tasks, with the comments and the generated `vacuity' task left out:
 
 ```
 [options]
 good:  mode bmc          <- can any assert() be broken?
 bad1:  mode bmc
 cover: mode cover        <- can every cover() be reached?
+depth 2                  <- how many steps to unroll
 
 [script]
 good:  read -formal good.v
@@ -42,12 +43,18 @@ cover: read -formal good.v
 read -formal props.v     <- YOUR properties, in every task
 ```
 
-Two knobs do all the work:
+Three knobs do all the work:
 
 - **which design is read.** Every design in a `dut/` directory declares
   the *same module name*, so swapping a correct one for a broken one is a
   single line and the harness never changes.
 - **which mode.** This is the one that surprises people.
+- **`depth`** — how many steps the solver unrolls before it stops looking.
+  Written once for the whole file here, and per-task where an exercise
+  wants to compare two. **You never need to edit it**: each exercise sets
+  the depth its tasks need, and where the number itself is the lesson
+  (exercise 05) the exercise ships two tasks that differ only in it.
+  Section 6 is about what that number does and does not buy you.
 
 | mode | the solver hunts for | it ignores | PASS | FAIL |
 |---|---|---|---|---|

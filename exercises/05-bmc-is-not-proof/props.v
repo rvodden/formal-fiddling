@@ -125,10 +125,20 @@
 // ---------------------------------------------------------------------
 // HOW DEEP IS DEEP ENOUGH -- AND THE HONEST ANSWER
 //
-// The number under discussion here is `depth' -- the one in prove.sby's
-// [options] block, which says how many steps the solver unrolls. Nothing
-// in this section is about what to aim a cover statement at; that is
-// TODO 2, and the numbers are different on purpose.
+// The number under discussion here is `depth': how many steps the solver
+// unrolls before it stops looking. It is the third knob in prove.sby's
+// [options] block, alongside the mode and which design a task reads --
+// see section 2 of the crib sheet.
+//
+// YOU DO NOT NEED TO EDIT IT. This exercise ships four tasks that are
+// already configured: `shallow' and `shallow_cover' at depth 20,
+// `deep' and `deep_cover' at 64. The whole exercise is those two numbers
+// against each other, so the knob is demonstrated rather than handed to
+// you. The only thing you write is the property file, same as everywhere
+// else.
+//
+// And nothing in this section is about what to aim a COVER STATEMENT at.
+// That is TODO 2, and its numbers are different on purpose.
 //
 // Here you can work it out: the bug needs the counter to pass 40, that
 // takes 41 clocks from reset, so a DEPTH over about 42 finds it and 64
