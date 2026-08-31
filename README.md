@@ -367,6 +367,18 @@ number:
   deep           fail     depth 64
 ```
 
+**Also watch for:** `make good` runs a *correct* watchdog — the same
+design with the counter one bit wider. Your property has to accept that
+as well as reject the broken one, and the two are easy to conflate:
+against a broken design, "exactly right" and "one clock too tight" both
+reject it and look identical. The bark is registered, so at the instant
+the quiet spell reaches `TIMEOUT` a correct watchdog has *decided* to bark
+but not yet done so. Demand it has, and you are rejecting correct
+hardware.
+
+That DUT is here because a reader's property set did exactly that, got all
+four depth verdicts right, and had nothing to tell it.
+
 **Watch for:** cover catches this too, for a completely different reason
 than in exercise 04. Nothing is over-constrained here; twenty steps simply
 never got within half the distance of the behaviour being claimed. So at

@@ -47,6 +47,14 @@
 // until the good case goes green -- that is fitting the property to the
 // implementation.
 //
+// That off-by-one is the reason `make good' exists. Against a broken
+// design, "exactly right" and "one clock too tight" look identical --
+// both reject it. Only a correct watchdog separates them, and a property
+// set with nothing correct to run against cannot be calibrated at all.
+// Every other exercise ships a good design for this reason; this one did
+// not, until a reader's too-tight assertion got all four depth verdicts
+// right and had nothing to tell it.
+//
 // The design never barks at all, so it breaks clause 3 outright. The
 // exercise is not about finding that. It is about the depth at which you
 // are told.
@@ -80,12 +88,16 @@
 //
 // Write a property set so that:
 //
+//   make good           PASS  -- a CORRECT watchdog, one bit wider. Your
+//                             property must accept this as well as reject
+//                             the broken one, and getting the bound one
+//                             clock too tight fails here and nowhere else.
 //   make shallow        PASS  -- bmc, depth 20. Says nothing is wrong.
 //   make shallow_cover  FAIL  -- and this is why you should not believe it
 //   make deep           FAIL  -- bmc, depth 64. The counterexample.
 //   make deep_cover     PASS
 //
-//   make                all four, with each verdict checked
+//   make                all of them, with each verdict checked
 //
 // The two `bmc' tasks run the same design against the same properties,
 // and differ in one number. One of them reports a clean run.
@@ -177,6 +189,11 @@ module props #(
     //     is cleared by a bark, letting it climb past the timeout is
     //     precisely the statement that no bark arrived.
     //
+    // Write it as a BOUND on f_quiet rather than as "when f_quiet reaches
+    // TIMEOUT, bark is high". The second is a clock too tight -- a
+    // correct watchdog has not barked at that instant, only decided to --
+    // and `make good' is what tells you so.
+    //
     // This is a bounded liveness property, the same shape as S5 in
     // exercise 03. It is the only kind of "something must eventually
     // happen" a bounded model checker can settle, and exercise 08 is
@@ -197,6 +214,14 @@ module props #(
     //   - a short quiet spell, which is reachable at any depth and is
     //     there as a control: if this one fails too, something is wrong
     //     with the harness rather than with the depth
+    //
+    // GATE YOUR COVER STATEMENTS the same way you gate assertions, on
+    // f_past_valid and !rst. f_quiet has no initial value, so on step 0
+    // it holds whatever the solver likes -- including whatever number you
+    // were hoping to see it count up to. An ungated `cover(f_quiet == N)'
+    // is reported reached at step 1, from the pre-reset value, without a
+    // single quiet clock having elapsed. It silences the very alarm this
+    // exercise is built around.
     //
     // Do not write `cover(bark)'. It is the obvious thing to want and it
     // is unreachable at EVERY depth, because the design never barks --

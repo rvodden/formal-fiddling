@@ -8,6 +8,7 @@
 #   depth 64   reachability -> deep_cover     PASS
 
 [tasks]
+good
 vacuity
 shallow
 shallow_cover
@@ -15,6 +16,8 @@ deep
 deep_cover
 
 [options]
+good: mode bmc
+good: depth 64
 vacuity: mode cover
 # 64, matching the deep tasks -- NOT the shallow ones. The vacuity task is
 # itself a bounded search, so a legitimate assertion whose enable takes 41
@@ -36,7 +39,16 @@ deep_cover:     depth 64
 smtbmc z3
 
 [script]
-read -formal watchdog.v
+# `good' reads the CORRECT watchdog; everything else reads the broken one.
+# The vacuity task reads the correct one too: it asks whether your
+# assertions can run against the design they are meant to describe, which
+# is not the same question as whether they can run against a broken one.
+good:    read -formal watchdog_good.v
+vacuity: read -formal watchdog_good.v
+shallow:       read -formal watchdog.v
+shallow_cover: read -formal watchdog.v
+deep:          read -formal watchdog.v
+deep_cover:    read -formal watchdog.v
 read -formal props.v
 read -formal formal_top.v
 prep -top formal_top
@@ -57,5 +69,6 @@ vacuity: chformal -assert -remove
 
 [files]
 watchdog.v
+watchdog_good.v
 props.v
 formal_top.v
