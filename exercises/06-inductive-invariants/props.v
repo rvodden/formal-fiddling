@@ -268,6 +268,8 @@ module props #(
     // you found and an invariant you were told.
     // ==================================================================
 
+    always @(posedge clk) if ( !rst )
+        assert((wptr - rptr) == count);
 
 `endif
 
